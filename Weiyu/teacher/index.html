@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weiyu - 教师上传中心</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/teacher.css">
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    
+    <!-- 登录区域 -->
+    <div id="loginSection" class="login-container">
+        <div class="login-card glass-card">
+            <div class="login-logo">
+                <div class="logo-icon" style="color: white; font-size: 2rem;">👨‍🏫</div>
+                <h1 class="login-title">教师登录</h1>
+                <p class="login-subtitle">Weiyu 网课视频共享平台</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" id="username" class="form-input" placeholder="请输入用户名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <input type="password" id="password" class="form-input" placeholder="请输入密码" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                    登录
+                </button>
+            </form>
+            
+            <div class="login-hint">
+                <p>默认账号：teacher1 / teacher123</p>
+            </div>
+            
+            <div class="login-footer">
+                <a href="../" class="link">返回学生下载页</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 教师主界面 -->
+    <div id="mainSection" class="teacher-container" style="display: none;">
+        <header class="page-header">
+            <div class="logo">
+                <div class="logo-icon" style="color: white; font-size: 1.2rem;">👨‍🏫</div>
+                <span>Weiyu 教师中心</span>
+            </div>
+            <nav class="nav-tabs">
+                <a href="#courses" class="nav-tab active" data-tab="courses">我的课程</a>
+                <a href="#upload" class="nav-tab" data-tab="upload">上传视频</a>
+            </nav>
+            <div class="user-info">
+                <span id="teacherName" class="user-name"></span>
+                <button class="btn btn-secondary btn-sm" onclick="logoutTeacher()">退出</button>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <!-- 课程管理标签页 -->
+            <div id="tab-courses" class="tab-content active">
+                <div class="section-header">
+                    <h2>我的课程</h2>
+                    <button class="btn btn-primary" onclick="openCourseModal()">
+                        <span>+</span> 创建新课程
+                    </button>
+                </div>
+                
+                <div id="courseList" class="course-grid">
+                    <!-- 课程卡片将动态插入 -->
+                </div>
+                
+                <div id="courseEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📚</div>
+                    <h3>暂无课程</h3>
+                    <p>点击上方按钮创建您的第一个课程</p>
+                </div>
+            </div>
+            
+            <!-- 上传视频标签页 -->
+            <div id="tab-upload" class="tab-content">
+                <div class="upload-section">
+                    <h2>上传视频</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">选择课程</label>
+                        <select id="uploadCourseSelect" class="form-select">
+                            <option value="">请选择课程</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">选择课次</label>
+                        <select id="uploadLessonSelect" class="form-select" disabled>
+                            <option value="">请先选择课程</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">或创建新课次</label>
+                        <div class="input-group">
+                            <input type="text" id="newLessonName" class="form-input" placeholder="输入新课次名称">
+                            <button class="btn btn-secondary" onclick="createNewLesson()">创建课次</button>
+                        </div>
+                    </div>
+                    
+                    <div id="uploadArea" class="upload-area" style="display: none;">
+                        <div class="upload-dropzone" id="dropzone">
+                            <div class="upload-icon">📁</div>
+                            <p class="upload-text">拖拽视频文件到此处</p>
+                            <p class="upload-hint">或点击选择文件</p>
+                            <input type="file" id="videoFiles" multiple accept="video/*" style="display: none;">
+                            <button class="btn btn-primary" onclick="document.getElementById('videoFiles').click()">
+                                选择视频文件
+                            </button>
+                        </div>
+                        
+                        <div id="uploadList" class="upload-list">
+                            <!-- 上传队列将显示在这里 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 创建/编辑课程模态框 -->
+    <div id="courseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="courseModalTitle" class="modal-title">创建新课程</h3>
+                <button class="modal-close" onclick="closeCourseModal()">×</button>
+            </div>
+            <form id="courseForm">
+                <input type="hidden" id="courseId">
+                <div class="form-group">
+                    <label class="form-label">课程名称 *</label>
+                    <input type="text" id="courseName" class="form-input" placeholder="如：高等数学A" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">学生名单 *</label>
+                    <textarea id="studentList" class="form-textarea" rows="6" placeholder="输入学生姓名，可用逗号、空格或换行分隔&#10;例如：张三, 李四, 王五" required></textarea>
+                    <p class="form-hint">已识别 <span id="studentCount">0</span> 位学生</p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCourseModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 课次详情模态框 -->
+    <div id="lessonModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="lessonModalTitle" class="modal-title">课次详情</h3>
+                <button class="modal-close" onclick="closeLessonModal()">×</button>
+            </div>
+            <div id="lessonModalContent">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/storage.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/teacher.js"></script>
+</body>
+</html>

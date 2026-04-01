@@ -1,0 +1,469 @@
+/* ========================================
+   Weiyu - 教师上传页样式
+   ======================================== */
+
+/* 登录提示 */
+.login-hint {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing);
+    background: rgba(102, 126, 234, 0.08);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 教师容器 */
+.teacher-container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+/* 用户名称 */
+.user-name {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* 主内容区 */
+.main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+/* 标签页内容 */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 区块头部 */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* 课程网格 */
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* 课程卡片 */
+.course-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-2);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all var(--transition);
+}
+
+.course-card:hover {
+    box-shadow: var(--shadow-3);
+    transform: translateY(-2px);
+}
+
+.course-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing);
+}
+
+.course-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.course-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.course-actions .btn {
+    padding: var(--spacing-xs);
+    min-width: 32px;
+    height: 32px;
+}
+
+.course-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.course-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.course-lessons {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding-top: var(--spacing);
+}
+
+.course-lessons h4 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500;
+}
+
+.lesson-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.lesson-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+}
+
+.lesson-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.lesson-info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lesson-name-text {
+    font-weight: 500;
+}
+
+.lesson-code {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.lesson-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.add-lesson-btn {
+    width: 100%;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+    background: transparent;
+    color: var(--primary-color);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.add-lesson-btn:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-color: var(--primary-color);
+}
+
+/* 上传区域 */
+.upload-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-2);
+}
+
+.upload-section h2 {
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.input-group .form-input {
+    flex: 1;
+}
+
+.form-hint {
+    margin-top: var(--spacing-xs);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 上传拖放区 */
+.upload-area {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.upload-dropzone {
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    background: rgba(102, 126, 234, 0.02);
+    transition: all var(--transition);
+    cursor: pointer;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.dragover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing);
+}
+
+.upload-text {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.upload-hint {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+/* 上传列表 */
+.upload-list {
+    margin-top: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.upload-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.upload-item.success {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.upload-item.error {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.upload-file-icon {
+    font-size: 1.5rem;
+}
+
+.upload-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.upload-file-name {
+    font-weight: 500;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upload-file-size {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.upload-progress {
+    width: 120px;
+}
+
+.upload-progress-bar {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.upload-status {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    min-width: 60px;
+    text-align: right;
+}
+
+.upload-item.success .upload-status {
+    color: #10b981;
+}
+
+.upload-item.error .upload-status {
+    color: #ef4444;
+}
+
+/* 模态框操作 */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 课次详情 */
+.lesson-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lesson-detail-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.download-code-box {
+    background: var(--primary-gradient);
+    color: white;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.download-code-box .label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-bottom: var(--spacing-xs);
+    display: block;
+}
+
+.download-code-box .code {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 4px;
+}
+
+.download-code-box .hint {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: var(--spacing-xs);
+}
+
+.video-list-section h4 {
+    margin-bottom: var(--spacing);
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.video-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.video-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing);
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: var(--border-radius-sm);
+}
+
+.video-list-item .video-name {
+    font-weight: 500;
+}
+
+.video-list-item .video-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 空课次列表 */
+.lesson-empty {
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* 学生列表 */
+.student-list-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+}
+
+.student-tag {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .course-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: var(--spacing);
+        align-items: flex-start;
+    }
+    
+    .input-group {
+        flex-direction: column;
+    }
+    
+    .upload-dropzone {
+        padding: var(--spacing-lg);
+    }
+}

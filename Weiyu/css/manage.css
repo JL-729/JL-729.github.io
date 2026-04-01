@@ -1,0 +1,300 @@
+/* ========================================
+   Weiyu - 管理后台样式
+   ======================================== */
+
+/* 登录提示 */
+.login-hint {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing);
+    background: rgba(102, 126, 234, 0.08);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 管理容器 */
+.manage-container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+/* 区块标题 */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* 统计网格 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* 头部操作区 */
+.header-actions {
+    display: flex;
+    gap: var(--spacing);
+    align-items: center;
+}
+
+/* 表格容器 */
+.table-container {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+}
+
+/* 最近下载记录 */
+.recent-downloads {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+}
+
+/* 设置区块 */
+.settings-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-2);
+}
+
+.settings-section h3 {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.settings-form {
+    max-width: 400px;
+}
+
+/* 危险区域 */
+.danger-zone {
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.danger-zone h3 {
+    color: #ef4444;
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.danger-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.danger-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing);
+    background: rgba(239, 68, 68, 0.03);
+    border-radius: var(--border-radius);
+}
+
+.danger-item h4 {
+    font-size: 1rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.danger-item p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* 操作按钮组 */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.action-buttons .btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.85rem;
+}
+
+/* 空表格提示 */
+.table-empty {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+
+/* 分页（预留） */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pagination button {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: white;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.pagination button:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--primary-color);
+}
+
+.pagination button.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 搜索高亮 */
+.highlight {
+    background: rgba(245, 158, 11, 0.3);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* 状态标签 */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+}
+
+.status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.status-active::before {
+    background: #10b981;
+}
+
+.status-inactive {
+    background: rgba(156, 163, 175, 0.1);
+    color: #9ca3af;
+}
+
+.status-inactive::before {
+    background: #9ca3af;
+}
+
+/* 文件大小显示 */
+.storage-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+    margin-top: var(--spacing-sm);
+}
+
+.storage-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.storage-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    border-radius: 4px;
+    transition: width var(--transition);
+}
+
+.storage-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .header-actions .form-input {
+        width: 100% !important;
+    }
+    
+    .danger-item {
+        flex-direction: column;
+        gap: var(--spacing);
+        text-align: center;
+    }
+    
+    .data-table {
+        font-size: 0.85rem;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: var(--spacing-sm);
+    }
+    
+    /* 表格横向滚动 */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .data-table {
+        min-width: 600px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .nav-tabs,
+    .user-info,
+    .btn {
+        display: none !important;
+    }
+    
+    .tab-content {
+        display: block !important;
+    }
+    
+    .settings-section.danger-zone {
+        display: none;
+    }
+}

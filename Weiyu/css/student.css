@@ -1,0 +1,279 @@
+/* ========================================
+   Weiyu - 学生下载页样式
+   ======================================== */
+
+/* 登录页特定样式 */
+.login-footer {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.login-footer .link {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.login-footer .link:hover {
+    text-decoration: underline;
+}
+
+.login-footer .divider {
+    margin: 0 var(--spacing);
+    color: var(--text-muted);
+}
+
+/* 视频容器 */
+.video-container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+/* 课次信息 */
+.lesson-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.lesson-info .course-name {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.lesson-info .lesson-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* 欢迎横幅 */
+.welcome-banner {
+    background: var(--primary-gradient);
+    color: white;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-3);
+}
+
+.welcome-text h2 {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.welcome-text p {
+    opacity: 0.9;
+}
+
+.download-code-display {
+    background: rgba(255, 255, 255, 0.2);
+    padding: var(--spacing) var(--spacing-md);
+    border-radius: var(--border-radius);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.download-code-display .label {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-bottom: var(--spacing-xs);
+}
+
+.download-code-display .code {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+/* 主内容区 */
+.main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+/* 视频网格 */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* 视频卡片 */
+.video-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+    transition: all var(--transition);
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-3);
+}
+
+.video-thumbnail {
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.video-thumbnail::before {
+    content: '▶';
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform var(--transition);
+}
+
+.video-card:hover .video-thumbnail::before {
+    transform: scale(1.1);
+}
+
+.video-duration {
+    position: absolute;
+    bottom: var(--spacing-sm);
+    right: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px var(--spacing-sm);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: monospace;
+}
+
+.video-info {
+    padding: var(--spacing-md);
+}
+
+.video-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.video-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.video-size {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.video-date {
+    font-size: 0.8rem;
+}
+
+.video-actions-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing);
+    padding-top: var(--spacing);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.video-actions-row .btn {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+/* 视频模态框 */
+.video-wrapper {
+    background: #000;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.video-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 空状态 */
+.empty-state {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .welcome-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-md);
+    }
+    
+    .welcome-text h2 {
+        font-size: 1.25rem;
+    }
+    
+    .video-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .lesson-info {
+        display: none;
+    }
+}
+
+/* 加载动画 */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(102, 126, 234, 0.2);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
