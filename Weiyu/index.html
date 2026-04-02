@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weiyu - 网课视频下载</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/student.css">
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    
+    <!-- 登录区域 -->
+    <div id="loginSection" class="login-container">
+        <div class="login-card glass-card">
+            <div class="login-logo">
+                <div class="logo-icon" style="color: white; font-size: 2rem;">📚</div>
+                <h1 class="login-title">Weiyu</h1>
+                <p class="login-subtitle">网课视频共享平台</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">下载码</label>
+                    <input type="text" id="downloadCode" class="form-input" placeholder="请输入6位下载码" maxlength="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">您的姓名</label>
+                    <input type="text" id="studentName" class="form-input" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                    验证并查看视频
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <a href="teacher/" class="link">教师入口</a>
+                <span class="divider">|</span>
+                <a href="manage/" class="link">管理后台</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 视频列表区域 -->
+    <div id="videoSection" class="video-container" style="display: none;">
+        <header class="page-header">
+            <div class="logo">
+                <div class="logo-icon" style="color: white; font-size: 1.2rem;">📚</div>
+                <span>Weiyu</span>
+            </div>
+            <div class="lesson-info">
+                <span id="courseName" class="course-name"></span>
+                <span id="lessonName" class="lesson-name"></span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="logoutStudent()">退出</button>
+        </header>
+        
+        <main class="main-content">
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h2>欢迎，<span id="welcomeName"></span>！</h2>
+                    <p>以下是您可以下载的视频课程</p>
+                </div>
+                <div class="download-code-display">
+                    <span class="label">下载码</span>
+                    <span id="displayCode" class="code"></span>
+                </div>
+            </div>
+            
+            <div id="videoList" class="video-grid">
+                <!-- 视频卡片将动态插入这里 -->
+            </div>
+            
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">🎬</div>
+                <h3>暂无视频</h3>
+                <p>该课次暂无上传的视频</p>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 视频预览模态框 -->
+    <div id="videoModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 900px; width: 95%;">
+            <div class="modal-header">
+                <h3 id="videoTitle" class="modal-title"></h3>
+                <button class="modal-close" onclick="closeVideoModal()">×</button>
+            </div>
+            <div class="video-wrapper">
+                <video id="videoPlayer" controls style="width: 100%; border-radius: var(--border-radius);">
+                    您的浏览器不支持视频播放
+                </video>
+            </div>
+            <div class="video-actions">
+                <button id="downloadBtn" class="btn btn-primary">
+                    <span>⬇</span> 下载视频
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/student.js"></script>
+</body>
+</html>

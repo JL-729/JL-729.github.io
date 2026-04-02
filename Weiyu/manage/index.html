@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weiyu - 管理后台</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/manage.css">
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    
+    <!-- 登录区域 -->
+    <div id="loginSection" class="login-container">
+        <div class="login-card glass-card">
+            <div class="login-logo">
+                <div class="logo-icon" style="color: white; font-size: 2rem;">⚙️</div>
+                <h1 class="login-title">管理后台</h1>
+                <p class="login-subtitle">Weiyu 网课视频共享平台</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">管理员密码</label>
+                    <input type="password" id="adminPassword" class="form-input" placeholder="请输入管理员密码" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                    登录
+                </button>
+            </form>
+            
+            <div class="login-hint">
+                <p>默认密码：admin123</p>
+            </div>
+            
+            <div class="login-footer">
+                <a href="../" class="link">返回学生下载页</a>
+                <span class="divider">|</span>
+                <a href="../teacher/" class="link">教师入口</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 管理后台主界面 -->
+    <div id="mainSection" class="manage-container" style="display: none;">
+        <header class="page-header">
+            <div class="logo">
+                <div class="logo-icon" style="color: white; font-size: 1.2rem;">⚙️</div>
+                <span>Weiyu 管理后台</span>
+            </div>
+            <nav class="nav-tabs">
+                <a href="#dashboard" class="nav-tab active" data-tab="dashboard">总览</a>
+                <a href="#teachers" class="nav-tab" data-tab="teachers">教师管理</a>
+                <a href="#videos" class="nav-tab" data-tab="videos">视频管理</a>
+                <a href="#downloads" class="nav-tab" data-tab="downloads">下载记录</a>
+                <a href="#settings" class="nav-tab" data-tab="settings">系统设置</a>
+            </nav>
+            <div class="user-info">
+                <span class="user-name">管理员</span>
+                <button class="btn btn-secondary btn-sm" onclick="logoutAdmin()">退出</button>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <!-- 总览标签页 -->
+            <div id="tab-dashboard" class="tab-content active">
+                <h2 class="section-title">数据总览</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTeachers">0</div>
+                        <div class="stat-label">教师数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statCourses">0</div>
+                        <div class="stat-label">课程数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statLessons">0</div>
+                        <div class="stat-label">课次数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statVideos">0</div>
+                        <div class="stat-label">视频数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statDownloads">0</div>
+                        <div class="stat-label">总下载次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statToday">0</div>
+                        <div class="stat-label">今日下载</div>
+                    </div>
+                </div>
+                
+                <h2 class="section-title" style="margin-top: var(--spacing-xl);">最近下载记录</h2>
+                <div class="recent-downloads">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>课程</th>
+                                <th>课次</th>
+                                <th>下载时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentDownloadsTable">
+                            <!-- 动态内容 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 教师管理标签页 -->
+            <div id="tab-teachers" class="tab-content">
+                <div class="section-header">
+                    <h2>教师管理</h2>
+                    <button class="btn btn-primary" onclick="openTeacherModal()">
+                        <span>+</span> 添加教师
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>课程数</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachersTable">
+                            <!-- 动态内容 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 视频管理标签页 -->
+            <div id="tab-videos" class="tab-content">
+                <div class="section-header">
+                    <h2>视频管理</h2>
+                    <div class="header-actions">
+                        <input type="text" id="videoSearch" class="form-input" placeholder="搜索视频名称..." style="width: 250px;">
+                        <button class="btn btn-danger" onclick="cleanupOrphanVideos(); refreshVideos(); showToast('已清理孤立视频', 'success');">
+                            清理孤立视频
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>视频名称</th>
+                                <th>所属课次</th>
+                                <th>所属课程</th>
+                                <th>大小</th>
+                                <th>上传时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="videosTable">
+                            <!-- 动态内容 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 下载记录标签页 -->
+            <div id="tab-downloads" class="tab-content">
+                <div class="section-header">
+                    <h2>下载记录</h2>
+                    <button class="btn btn-secondary" onclick="exportDownloads()">
+                        📥 导出记录
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>课程</th>
+                                <th>课次</th>
+                                <th>下载时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="downloadsTable">
+                            <!-- 动态内容 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 系统设置标签页 -->
+            <div id="tab-settings" class="tab-content">
+                <h2 class="section-title">系统设置</h2>
+                
+                <div class="settings-section">
+                    <h3>管理员密码</h3>
+                    <form id="passwordForm" class="settings-form">
+                        <div class="form-group">
+                            <label class="form-label">当前密码</label>
+                            <input type="password" id="currentPassword" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">新密码</label>
+                            <input type="password" id="newPassword" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">确认新密码</label>
+                            <input type="password" id="confirmPassword" class="form-input" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">修改密码</button>
+                    </form>
+                </div>
+                
+                <div class="settings-section danger-zone">
+                    <h3>⚠️ 危险区域</h3>
+                    <div class="danger-actions">
+                        <div class="danger-item">
+                            <div>
+                                <h4>导出所有数据</h4>
+                                <p>将所有数据导出为 JSON 文件，用于备份</p>
+                            </div>
+                            <button class="btn btn-secondary" onclick="exportAllDataToFile()">导出数据</button>
+                        </div>
+                        <div class="danger-item">
+                            <div>
+                                <h4>导入数据</h4>
+                                <p>从 JSON 文件导入数据（会覆盖现有数据）</p>
+                            </div>
+                            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importDataFromFile(this)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">导入数据</button>
+                        </div>
+                        <div class="danger-item">
+                            <div>
+                                <h4>清空所有数据</h4>
+                                <p>删除所有课程、视频、教师等数据（不可恢复）</p>
+                            </div>
+                            <button class="btn btn-danger" onclick="clearAllDataConfirm()">清空数据</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 添加/编辑教师模态框 -->
+    <div id="teacherModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="teacherModalTitle" class="modal-title">添加教师</h3>
+                <button class="modal-close" onclick="closeTeacherModal()">×</button>
+            </div>
+            <form id="teacherForm">
+                <input type="hidden" id="teacherId">
+                <div class="form-group">
+                    <label class="form-label">用户名 *</label>
+                    <input type="text" id="teacherUsername" class="form-input" placeholder="用于登录的用户名" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">姓名 *</label>
+                    <input type="text" id="teacherName" class="form-input" placeholder="教师显示名称" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" id="passwordLabel">密码 *</label>
+                    <input type="password" id="teacherPassword" class="form-input" placeholder="登录密码" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTeacherModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 修改教师密码模态框 -->
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">修改密码</h3>
+                <button class="modal-close" onclick="closePasswordModal()">×</button>
+            </div>
+            <form id="changePasswordForm">
+                <input type="hidden" id="passwordTeacherId">
+                <div class="form-group">
+                    <label class="form-label">新密码</label>
+                    <input type="password" id="newTeacherPassword" class="form-input" placeholder="输入新密码" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/storage.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/manage.js"></script>
+</body>
+</html>
