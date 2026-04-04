@@ -6,7 +6,7 @@
 .login-hint {
     margin-top: var(--spacing-md);
     padding: var(--spacing);
-    background: rgba(102, 126, 234, 0.08);
+    background: rgba(150, 199, 92, 0.08);
     border-radius: var(--border-radius-sm);
     text-align: center;
     font-size: 0.85rem;
@@ -150,7 +150,7 @@
 }
 
 .pagination button:hover {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(150, 199, 92, 0.1);
     border-color: var(--primary-color);
 }
 
