@@ -6,7 +6,7 @@
 .login-hint {
     margin-top: var(--spacing-md);
     padding: var(--spacing);
-    background: rgba(102, 126, 234, 0.08);
+    background: rgba(150, 199, 92, 0.08);
     border-radius: var(--border-radius-sm);
     text-align: center;
     font-size: 0.85rem;
@@ -137,13 +137,13 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-sm);
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(150, 199, 92, 0.05);
     border-radius: var(--border-radius-sm);
     font-size: 0.9rem;
 }
 
 .lesson-item:hover {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(150, 199, 92, 0.1);
 }
 
 .lesson-info-text {
@@ -160,7 +160,7 @@
     font-family: monospace;
     font-size: 0.8rem;
     color: var(--primary-color);
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(150, 199, 92, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
 }
@@ -174,7 +174,7 @@
     width: 100%;
     margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
-    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border: 2px dashed rgba(150, 199, 92, 0.3);
     background: transparent;
     color: var(--primary-color);
     border-radius: var(--border-radius-sm);
@@ -184,7 +184,7 @@
 }
 
 .add-lesson-btn:hover {
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(150, 199, 92, 0.05);
     border-color: var(--primary-color);
 }
 
@@ -224,11 +224,11 @@
 }
 
 .upload-dropzone {
-    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border: 2px dashed rgba(150, 199, 92, 0.3);
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-xl);
     text-align: center;
-    background: rgba(102, 126, 234, 0.02);
+    background: rgba(150, 199, 92, 0.02);
     transition: all var(--transition);
     cursor: pointer;
 }
@@ -236,7 +236,7 @@
 .upload-dropzone:hover,
 .upload-dropzone.dragover {
     border-color: var(--primary-color);
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(150, 199, 92, 0.05);
 }
 
 .upload-icon {
@@ -269,9 +269,9 @@
     align-items: center;
     gap: var(--spacing);
     padding: var(--spacing);
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(150, 199, 92, 0.05);
     border-radius: var(--border-radius);
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(150, 199, 92, 0.1);
 }
 
 .upload-item.success {
@@ -440,7 +440,7 @@
 }
 
 .student-tag {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(150, 199, 92, 0.1);
     color: var(--primary-color);
     padding: 2px 8px;
     border-radius: 9999px;
