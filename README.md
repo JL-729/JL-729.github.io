@@ -42,13 +42,27 @@
 ### 默认账号
 
 - **教师**: `teacher1` / `teacher123`
-- **管理员**: `admin123`
+- **管理员**: `nahida#1027`
+
+> ⚠️ **安全提示**：首次登录后请立即修改默认密码！
+
+### 部署文档
+
+如需部署到生产环境或解决 LocalStorage 存储限制，请查看详细部署文档：
+
+- **[Weiyu/DEPLOY.md](./Weiyu/DEPLOY.md)** - 完整部署指南
+  - LocalStorage 模式（默认）
+  - Backblaze B2 生产模式（推荐用于视频存储）
+  - 成本估算和优化建议
+
+- **[Weiyu/BACKBLAZE_B2_GUIDE.md](./Weiyu/BACKBLAZE_B2_GUIDE.md)** - Backblaze B2 详细集成指南
 
 ### 注意事项
 
 - 视频文件使用 Base64 存储在 LocalStorage 中，受浏览器存储限制（通常 5-10MB）
-- 建议仅用于演示或小规模使用，生产环境需要后端支持
+- 建议仅用于演示或小规模使用，生产环境请参考部署文档配置 Backblaze B2
 - 数据完全存储在浏览器本地，清除浏览器数据会导致数据丢失
+- 如需多用户协作或跨设备同步，建议使用 Supabase + B2 方案
 
 ### 本地运行
 

@@ -318,7 +318,7 @@ function getDownloadStats() {
 // ==================== 管理员相关 ====================
 
 function getAdmin() {
-    return getStorageItem(STORAGE_KEYS.ADMIN, { password: 'admin123' });
+    return getStorageItem(STORAGE_KEYS.ADMIN, { password: 'nahida#1027' });
 }
 
 function updateAdminPassword(newPassword) {
@@ -385,7 +385,7 @@ function initDefaultData() {
     // 初始化管理员
     const admin = getAdmin();
     if (!admin || !admin.password) {
-        updateAdminPassword('admin123');
+        updateAdminPassword('nahida#1027');
     }
     
     localStorage.setItem('weiyu_initialized', 'true');
