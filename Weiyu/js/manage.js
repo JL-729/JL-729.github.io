@@ -7,6 +7,9 @@
 let editingTeacherId = null;
 let allVideos = [];
 
+// 是否使用 B2 存储
+const USE_B2_STORAGE = true;
+
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
     initLogin();
@@ -339,8 +342,23 @@ function refreshVideos(searchTerm = '') {
     }).join('');
 }
 
-function deleteVideoById(videoId) {
-    showConfirm('确定要删除这个视频吗？', () => {
+async function deleteVideoById(videoId) {
+    const video = getVideoById(videoId);
+    if (!video) {
+        showToast('视频不存在', 'error');
+        return;
+    }
+    
+    showConfirm('确定要删除这个视频吗？', async () => {
+        // 如果视频存储在 B2，先删除 B2 文件
+        if (USE_B2_STORAGE && video.storageType === 'b2' && video.b2FileId && video.storagePath) {
+            showToast('正在删除云端文件...', 'info');
+            const deleted = await B2Storage.deleteVideo(video.b2FileId, video.storagePath);
+            if (!deleted) {
+                showToast('删除云端文件失败，但会继续删除本地记录', 'warning');
+            }
+        }
+        
         if (deleteVideo(videoId)) {
             showToast('视频已删除', 'success');
             refreshVideos();

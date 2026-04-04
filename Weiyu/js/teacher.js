@@ -8,6 +8,9 @@ let currentTeacher = null;
 let courses = [];
 let editingCourseId = null;
 
+// 是否使用 B2 存储（可以通过配置切换）
+const USE_B2_STORAGE = true;
+
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
     initLogin();
@@ -342,12 +345,27 @@ function deleteLesson(lessonId) {
     });
 }
 
-function deleteLessonVideo(videoId) {
-    showConfirm('确定要删除这个视频吗？', () => {
+async function deleteLessonVideo(videoId) {
+    const video = getVideoById(videoId);
+    if (!video) {
+        showToast('视频不存在', 'error');
+        return;
+    }
+    
+    showConfirm('确定要删除这个视频吗？', async () => {
+        // 如果视频存储在 B2，先删除 B2 文件
+        if (video.storageType === 'b2' && video.b2FileId && video.storagePath) {
+            showToast('正在删除云端文件...', 'info');
+            const deleted = await B2Storage.deleteVideo(video.b2FileId, video.storagePath);
+            if (!deleted) {
+                showToast('删除云端文件失败，但会继续删除本地记录', 'warning');
+            }
+        }
+        
         if (deleteVideo(videoId)) {
             showToast('视频已删除', 'success');
             // 刷新模态框内容
-            const lessonId = getVideoById(videoId)?.lessonId;
+            const lessonId = video.lessonId;
             if (lessonId) {
                 showLessonDetail(lessonId);
             }
@@ -444,6 +462,15 @@ function handleFiles(files) {
 }
 
 function uploadVideo(file, lessonId) {
+    if (USE_B2_STORAGE) {
+        uploadVideoToB2Storage(file, lessonId);
+    } else {
+        uploadVideoToLocalStorage(file, lessonId);
+    }
+}
+
+// 上传到 LocalStorage（原有逻辑）
+function uploadVideoToLocalStorage(file, lessonId) {
     const uploadList = document.getElementById('uploadList');
     const uploadId = 'upload-' + Date.now() + Math.random();
     
@@ -486,7 +513,8 @@ function uploadVideo(file, lessonId) {
             name: file.name,
             data: e.target.result,
             size: file.size,
-            type: file.type
+            type: file.type,
+            storageType: 'local'
         };
         
         try {
@@ -513,6 +541,72 @@ function uploadVideo(file, lessonId) {
     };
     
     reader.readAsDataURL(file);
+}
+
+// 上传到 Backblaze B2
+async function uploadVideoToB2Storage(file, lessonId) {
+    const uploadList = document.getElementById('uploadList');
+    const uploadId = 'upload-' + Date.now() + Math.random();
+    
+    // 创建上传项
+    const uploadItem = document.createElement('div');
+    uploadItem.className = 'upload-item';
+    uploadItem.id = uploadId;
+    uploadItem.innerHTML = `
+        <span class="upload-file-icon">🎬</span>
+        <div class="upload-file-info">
+            <div class="upload-file-name">${escapeHtml(file.name)}</div>
+            <div class="upload-file-size">${formatFileSize(file.size)}</div>
+        </div>
+        <div class="upload-progress">
+            <div class="upload-progress-bar">
+                <div class="upload-progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        <span class="upload-status">准备上传...</span>
+    `;
+    
+    uploadList.appendChild(uploadItem);
+    
+    try {
+        // 使用 B2Storage 模块上传
+        const result = await B2Storage.uploadVideo(file, lessonId, (percent) => {
+            uploadItem.querySelector('.upload-progress-fill').style.width = percent + '%';
+            uploadItem.querySelector('.upload-status').textContent = `上传中 ${Math.round(percent)}%`;
+        });
+        
+        if (result.success) {
+            // 保存视频元数据到 LocalStorage
+            const video = {
+                lessonId,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                storageType: 'b2',
+                b2FileId: result.fileId,
+                storagePath: result.storagePath,
+                formattedSize: result.formattedSize,
+                uploadedAt: result.uploadTimestamp
+            };
+            
+            if (saveVideo(video)) {
+                uploadItem.classList.add('success');
+                uploadItem.querySelector('.upload-progress-fill').style.width = '100%';
+                uploadItem.querySelector('.upload-status').textContent = '完成';
+                showToast(`上传成功: ${file.name}`, 'success');
+                loadCourses();
+            } else {
+                throw new Error('保存元数据失败');
+            }
+        } else {
+            throw new Error(result.error || '上传失败');
+        }
+    } catch (error) {
+        console.error('上传错误:', error);
+        uploadItem.classList.add('error');
+        uploadItem.querySelector('.upload-status').textContent = '失败';
+        showToast(`上传失败: ${file.name} - ${error.message}`, 'error');
+    }
 }
 
 // HTML 转义
