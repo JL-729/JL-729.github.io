@@ -873,6 +873,231 @@ async function getCachedUploadUrl() {
 
 ---
 
-**文档版本**：v1.0  
+## 快速集成指南
+
+### 一键配置 B2 存储
+
+Weiyu 已经集成了 Cloudflare Worker + Backblaze B2 存储方案。按照以下步骤快速启用：
+
+#### 1. 部署 Cloudflare Worker
+
+```bash
+# 进入 worker 目录
+cd Weiyu/worker
+
+# 安装 wrangler
+npm install -g wrangler
+
+# 登录 Cloudflare
+wrangler login
+
+# 设置环境变量
+wrangler secret put B2_ACCOUNT_ID
+wrangler secret put B2_APPLICATION_KEY
+wrangler secret put B2_BUCKET_ID
+wrangler secret put B2_BUCKET_NAME
+
+# 部署
+wrangler deploy
+```
+
+#### 2. 更新前端配置
+
+编辑 `js/b2-storage.js`，修改 Worker URL：
+
+```javascript
+const WORKER_BASE_URL = 'https://your-worker-name.your-account.workers.dev';
+```
+
+#### 3. 切换存储模式
+
+编辑各个 JS 文件中的配置：
+
+```javascript
+const USE_B2_STORAGE = true;  // true = 使用 B2，false = 使用 LocalStorage
+```
+
+### Worker API 端点
+
+部署后的 Worker 提供以下接口：
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/upload-url` | GET | 获取 B2 上传 URL |
+| `/api/download-url?file=path` | GET | 获取 B2 下载 URL |
+| `/api/delete-file` | POST | 删除 B2 文件 |
+| `/api/health` | GET | 健康检查 |
+
+### 数据存储架构
+
+启用 B2 后，数据将按以下方式存储：
+
+```
+LocalStorage (浏览器)          Backblaze B2 (云端)
+├─ 课程信息                     ├─ videos/
+├─ 课次信息                     │  └─ {lessonId}/
+├─ 学生名单                     │     ├─ {timestamp}_video1.mp4
+├─ 视频元数据 (storagePath)    │     └─ {timestamp}_video2.mp4
+│  ├─ storageType: 'b2'
+│  ├─ b2FileId: '...'
+│  └─ storagePath: 'videos/...'
+└─ 下载记录
+```
+
+### 混合存储支持
+
+系统支持混合存储模式：
+- 新上传的视频 → 自动存储到 B2
+- 旧视频（storageType: 'local'）→ 仍然可以从 LocalStorage 访问
+
+### 迁移现有视频
+
+如需将现有 LocalStorage 视频迁移到 B2：
+
+```javascript
+// 在浏览器控制台执行
+async function migrateToB2() {
+    const videos = getVideos().filter(v => v.storageType !== 'b2' && v.data);
+    for (const video of videos) {
+        // 从 data URL 创建文件
+        const res = await fetch(video.data);
+        const blob = await res.blob();
+        const file = new File([blob], video.name, { type: video.type });
+        
+        // 上传到 B2
+        const result = await B2Storage.uploadVideo(file, video.lessonId);
+        if (result.success) {
+            // 更新视频记录
+            video.storageType = 'b2';
+            video.b2FileId = result.fileId;
+            video.storagePath = result.storagePath;
+            delete video.data; // 删除 base64 数据以节省空间
+            saveVideo(video);
+        }
+    }
+}
+```
+
+---
+
+## 完整 B2 部署步骤
+
+### 步骤 1：创建 Backblaze B2 账户
+
+1. 访问 [https://www.backblaze.com/b2/cloud-storage.html](https://www.backblaze.com/b2/cloud-storage.html)
+2. 点击 "Sign Up" 注册账户
+3. 验证邮箱并完成注册
+4. 登录 B2 控制台
+
+### 步骤 2：创建 Bucket
+
+1. 点击左侧菜单的 **"Buckets"**
+2. 点击 **"Create a Bucket"**
+3. 配置：
+   - **Bucket Name**: `weiyu-videos`（全局唯一）
+   - **Files in Bucket**: **Private**（推荐）
+4. 记录 **Bucket ID**（如：`abc123def456`）
+
+### 步骤 3：获取 API 凭证
+
+1. 点击左侧菜单的 **"App Keys"**
+2. 点击 **"Create Application Key"**
+3. 配置：
+   - **Name**: `weiyu-app-key`
+   - **Allow access to Bucket(s)**: 选择你的 bucket
+   - **Type of Access**: **Read and Write**
+4. 立即复制 **keyID** 和 **applicationKey**（只显示一次）
+
+### 步骤 4：创建 Cloudflare Worker
+
+#### 4.1 使用 Wrangler CLI 部署（推荐）
+
+```bash
+# 进入 worker 目录
+cd Weiyu/worker
+
+# 安装 wrangler
+npm install -g wrangler
+
+# 登录 Cloudflare
+wrangler login
+
+# 设置环境变量（交互式输入）
+wrangler secret put B2_ACCOUNT_ID
+# 输入你的 B2 Account ID（在 B2 控制台右上角显示）
+
+wrangler secret put B2_APPLICATION_KEY
+# 输入步骤 3 的 applicationKey
+
+wrangler secret put B2_BUCKET_ID
+# 输入步骤 2 的 Bucket ID
+
+wrangler secret put B2_BUCKET_NAME
+# 输入步骤 2 的 Bucket Name（如：weiyu-videos）
+
+# 部署
+wrangler deploy
+```
+
+部署成功后，会显示 Worker URL，例如：
+```
+https://weiyu-b2-proxy.your-account.workers.dev
+```
+
+#### 4.2 或使用 Cloudflare Dashboard 部署
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 点击 **"Workers & Pages"** → **"Create application"**
+3. 选择 **"Create Worker"**
+4. 命名 Worker（如：`weiyu-b2-proxy`）
+5. 点击 **"Deploy"** → **"Edit code"**
+6. 将 `worker.js` 的内容粘贴到代码编辑器
+7. 在 **Settings** → **Variables** 中添加环境变量：
+   - `B2_ACCOUNT_ID`
+   - `B2_APPLICATION_KEY`
+   - `B2_BUCKET_ID`
+   - `B2_BUCKET_NAME`
+8. 点击 **"Save and Deploy"**
+
+### 步骤 5：配置前端
+
+编辑 `Weiyu/js/b2-storage.js`：
+
+```javascript
+const WORKER_BASE_URL = 'https://weiyu-b2-proxy.your-account.workers.dev';
+```
+
+确保以下文件中的 `USE_B2_STORAGE = true`：
+- `js/teacher.js`
+- `js/student.js`
+- `js/manage.js`
+
+### 步骤 6：部署前端到 GitHub Pages
+
+```bash
+# 将代码推送到 GitHub
+git add .
+git commit -m "feat: integrate Backblaze B2 storage"
+git push origin main
+
+# 在 GitHub 仓库设置中启用 GitHub Pages
+# Settings → Pages → Source → Deploy from a branch → main / root
+```
+
+### 步骤 7：测试部署
+
+1. 访问 Worker 健康检查端点：
+   ```
+   https://your-worker.workers.dev/api/health
+   ```
+   应返回：`{"status":"ok","service":"weiyu-b2-proxy",...}`
+
+2. 访问 GitHub Pages 网站
+
+3. 测试视频上传、预览、下载功能
+
+---
+
+**文档版本**：v2.0  
 **最后更新**：2024年4月  
 **维护者**：Weiyu Team

@@ -9,6 +9,9 @@ let currentCourse = null;
 let currentStudentName = '';
 let currentVideos = [];
 
+// 是否使用 B2 存储
+const USE_B2_STORAGE = true;
+
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
@@ -126,10 +129,10 @@ function renderVideoList() {
 }
 
 // 打开视频预览模态框
-function openVideoModal(videoId) {
+async function openVideoModal(videoId) {
     const video = currentVideos.find(v => v.id === videoId);
-    if (!video || !video.data) {
-        showToast('视频数据不存在', 'error');
+    if (!video) {
+        showToast('视频不存在', 'error');
         return;
     }
     
@@ -139,7 +142,26 @@ function openVideoModal(videoId) {
     const downloadBtn = document.getElementById('downloadBtn');
     
     title.textContent = video.name;
-    player.src = video.data;
+    
+    // 根据存储类型获取视频 URL
+    let videoUrl = null;
+    
+    if (USE_B2_STORAGE && video.storageType === 'b2' && video.storagePath) {
+        showToast('正在加载视频...', 'info');
+        videoUrl = await B2Storage.getDownloadUrl(video.storagePath);
+        if (!videoUrl) {
+            showToast('获取视频链接失败', 'error');
+            return;
+        }
+    } else if (video.data) {
+        // LocalStorage 模式
+        videoUrl = video.data;
+    } else {
+        showToast('视频数据不存在', 'error');
+        return;
+    }
+    
+    player.src = videoUrl;
     
     // 设置下载按钮
     downloadBtn.onclick = () => downloadVideo(videoId);
@@ -163,18 +185,36 @@ function closeVideoModal() {
 }
 
 // 下载视频
-function downloadVideo(videoId) {
+async function downloadVideo(videoId) {
     const video = currentVideos.find(v => v.id === videoId);
-    if (!video || !video.data) {
-        showToast('视频数据不存在', 'error');
+    if (!video) {
+        showToast('视频不存在', 'error');
         return;
     }
     
     try {
+        let videoUrl = null;
+        
+        if (USE_B2_STORAGE && video.storageType === 'b2' && video.storagePath) {
+            showToast('正在获取下载链接...', 'info');
+            videoUrl = await B2Storage.getDownloadUrl(video.storagePath);
+            if (!videoUrl) {
+                showToast('获取下载链接失败', 'error');
+                return;
+            }
+        } else if (video.data) {
+            // LocalStorage 模式
+            videoUrl = video.data;
+        } else {
+            showToast('视频数据不存在', 'error');
+            return;
+        }
+        
         // 创建下载链接
         const link = document.createElement('a');
-        link.href = video.data;
+        link.href = videoUrl;
         link.download = video.name;
+        link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
