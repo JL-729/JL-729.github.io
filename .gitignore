@@ -10,7 +10,7 @@ package-lock.json
 yarn.lock
 
 # Cloudflare Worker
-wrangler.toml
+# wrangler.toml - 不再忽略，因为文件不包含敏感信息
 .worker
 .dev.vars
 

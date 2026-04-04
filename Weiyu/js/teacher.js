@@ -120,7 +120,7 @@ function renderCourseList() {
                         <button class="btn btn-secondary btn-sm" onclick="editCourse('${course.id}')" title="编辑">
                             ✏️
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteCourse('${course.id}')" title="删除">
+                        <button class="btn btn-danger btn-sm" onclick="handleDeleteCourse('${course.id}')" title="删除">
                             🗑️
                         </button>
                     </div>
@@ -235,8 +235,19 @@ function editCourse(courseId) {
     openCourseModal(courseId);
 }
 
-function deleteCourse(courseId) {
-    showConfirm('确定要删除这个课程吗？相关的课次和视频也会被删除。', () => {
+async function handleDeleteCourse(courseId) {
+    showConfirm('确定要删除这个课程吗？相关的课次和视频也会被删除。', async () => {
+        // 先删除相关课次的 B2 视频文件
+        const lessons = getLessonsByCourse(courseId);
+        for (const lesson of lessons) {
+            const videos = getVideosByLesson(lesson.id);
+            for (const video of videos) {
+                if (video.storageType === 'b2' && video.b2FileId && video.storagePath) {
+                    await B2Storage.deleteVideo(video.b2FileId, video.storagePath);
+                }
+            }
+        }
+        
         if (deleteCourse(courseId)) {
             showToast('课程已删除', 'success');
             loadCourses();
@@ -301,7 +312,7 @@ function showLessonDetail(lessonId) {
     content.innerHTML = `
         <div class="lesson-detail-header">
             <span class="lesson-detail-title">${escapeHtml(lesson.name)}</span>
-            <button class="btn btn-danger btn-sm" onclick="deleteLesson('${lesson.id}')">删除课次</button>
+            <button class="btn btn-danger btn-sm" onclick="handleDeleteLesson('${lesson.id}')">删除课次</button>
         </div>
         
         <div class="download-code-box">
@@ -335,8 +346,16 @@ function closeLessonModal() {
     document.getElementById('lessonModal').classList.remove('active');
 }
 
-function deleteLesson(lessonId) {
-    showConfirm('确定要删除这个课次吗？所有视频也会被删除。', () => {
+async function handleDeleteLesson(lessonId) {
+    showConfirm('确定要删除这个课次吗？所有视频也会被删除。', async () => {
+        // 先删除课次相关的 B2 视频文件
+        const videos = getVideosByLesson(lessonId);
+        for (const video of videos) {
+            if (video.storageType === 'b2' && video.b2FileId && video.storagePath) {
+                await B2Storage.deleteVideo(video.b2FileId, video.storagePath);
+            }
+        }
+        
         if (deleteLesson(lessonId)) {
             showToast('课次已删除', 'success');
             closeLessonModal();
