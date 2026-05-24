@@ -5,34 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>同学录 - 星河记忆</title>
     <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/galaxy.js"></script>
     <style>
         .polaroid {
             background: white;
             padding: 10px 10px 30px 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             transform: rotate(-2deg);
             max-width: 250px;
             color: #333;
             text-align: center;
+            border-radius: 3px;
         }
         .polaroid img {
             width: 100%;
             height: 200px;
             object-fit: cover;
+            border-radius: 2px;
         }
         .polaroid .name {
-            font-family: 'Kaiti', serif;
+            font-family: 'Kaiti', 'STKaiti', serif;
             font-size: 1.5rem;
             margin-top: 10px;
+        }
+        .polaroid .wish {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="stars-container">
-        <div class="star-layer star-layer-1"></div>
-        <div class="star-layer star-layer-2"></div>
-        <div class="star-layer star-layer-3"></div>
-    </div>
+    <canvas id="galaxy-canvas"></canvas>
 
     <nav class="glass">
         <div class="logo">✨ 星河记忆</div>
@@ -46,7 +53,7 @@
     </nav>
 
     <main>
-        <h1 style="text-align: center;">星图同学录</h1>
+        <h1 style="text-align: center;">🌟 星图同学录</h1>
         <p style="text-align: center;">每一颗星，都是一个闪光的你</p>
         
         <div id="star-map" class="glass">
@@ -55,11 +62,11 @@
 
         <section class="glass" style="margin-top: 2rem; padding: 2rem;">
             <h2>加入星图</h2>
-            <div class="grid" style="grid-template-columns: 1fr;">
-                <input type="text" id="alumni-name" placeholder="姓名" class="glass">
-                <input type="text" id="alumni-photo" placeholder="照片 URL" class="glass">
-                <input type="text" id="alumni-wish" placeholder="寄语" class="glass">
-                <button class="btn btn-primary" onclick="addAlumni()">点亮我的星</button>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <input type="text" id="alumni-name" placeholder="你的姓名" class="glass">
+                <input type="text" id="alumni-photo" placeholder="照片 URL（可选）" class="glass">
+                <input type="text" id="alumni-wish" placeholder="你的寄语" class="glass">
+                <button class="btn btn-primary" onclick="addAlumni()" style="align-self: flex-start;">🌟 点亮我的星</button>
             </div>
         </section>
     </main>
@@ -72,23 +79,28 @@
 
     <script>
         async function loadAlumni() {
-            const res = await fetch('/api/alumni');
             let alumni = [];
-            if (res.ok) {
-                alumni = await res.json();
+            try {
+                const data = await Storage.readJSON('/db/alumni.json');
+                if (data && Array.isArray(data)) {
+                    alumni = data;
+                }
+            } catch (e) {
+                console.warn('[Alumni] 加载校友数据失败，使用默认:', e);
             }
             
             if (alumni.length === 0) {
                 alumni = [
                     { name: '王小明', photo: 'https://via.placeholder.com/200x200?text=WXM', wish: '前程似锦！' },
-                    { name: '李华', photo: 'https://via.placeholder.com/200x200?text=LH', wish: '江湖再见。' }
+                    { name: '李华', photo: 'https://via.placeholder.com/200x200?text=LH', wish: '江湖再见。' },
+                    { name: '张伟', photo: 'https://via.placeholder.com/200x200?text=ZW', wish: '永远少年！' }
                 ];
             }
 
             const map = document.getElementById('star-map');
             map.innerHTML = '';
             
-            alumni.forEach((person, index) => {
+            alumni.forEach((person) => {
                 const star = document.createElement('div');
                 star.className = 'alumni-star';
                 
@@ -108,25 +120,40 @@
         }
 
         async function addAlumni() {
-            const name = document.getElementById('alumni-name').value;
-            const photo = document.getElementById('alumni-photo').value;
-            const wish = document.getElementById('alumni-wish').value;
+            const name = document.getElementById('alumni-name').value.trim();
+            const photo = document.getElementById('alumni-photo').value.trim();
+            const wish = document.getElementById('alumni-wish').value.trim();
             
-            if (!name || !photo || !wish) {
-                alert('请填写完整信息');
+            if (!name) {
+                alert('请至少填写姓名');
                 return;
             }
 
-            const res = await fetch('/api/alumni', {
-                method: 'POST',
-                body: JSON.stringify({ name, photo, wish })
-            });
+            if (!Auth.isLoggedIn()) {
+                alert('请先登录后再加入星图');
+                return;
+            }
 
-            if (res.ok) {
-                alert('已加入星图');
+            const entry = {
+                name,
+                photo: photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7d5fff&color=fff&size=200`,
+                wish: wish || '很高兴认识大家！'
+            };
+
+            try {
+                let alumni = await Storage.readJSON('/db/alumni.json') || [];
+                if (!Array.isArray(alumni)) alumni = [];
+                alumni.push(entry);
+                await Storage.writeJSON('/db/alumni.json', alumni);
+                
+                alert('✨ 已加入星图！');
+                document.getElementById('alumni-name').value = '';
+                document.getElementById('alumni-photo').value = '';
+                document.getElementById('alumni-wish').value = '';
                 loadAlumni();
-            } else {
-                alert('请先登录');
+            } catch (e) {
+                console.error('[Alumni] 保存失败:', e);
+                alert('保存失败，请重试');
             }
         }
 
@@ -135,9 +162,9 @@
             const content = overlay.querySelector('.overlay-content');
             content.innerHTML = `
                 <div class="polaroid">
-                    <img src="${person.photo}" alt="${person.name}">
+                    <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
                     <div class="name">${person.name}</div>
-                    <div class="wish">${person.wish}</div>
+                    <div class="wish">💬 ${person.wish}</div>
                 </div>
             `;
             overlay.style.display = 'flex';
@@ -147,17 +174,17 @@
             this.style.display = 'none';
         };
 
+        Galaxy.init();
         loadAlumni();
         
-        fetch('/api/me').then(res => {
-            if (res.ok) {
-                res.json().then(user => {
-                    if (user.role === 'admin' || user.role === 'head') {
-                        document.getElementById('admin-link').classList.remove('hidden');
-                    }
-                });
-            }
-        });
+        // Auth check
+        const user = Auth.getUser();
+        if (user && (user.role === 'admin' || user.role === 'head')) {
+            document.getElementById('admin-link').classList.remove('hidden');
+        }
+        if (user) {
+            document.getElementById('login-link').classList.add('hidden');
+        }
     </script>
 </body>
 </html>

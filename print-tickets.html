@@ -2,8 +2,12 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>打印凭据 - 星河记忆</title>
     <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
     <style>
         body { background: white; color: black; }
         .page {
@@ -43,8 +47,8 @@
 </head>
 <body>
     <div class="no-print" style="padding: 20px; text-align: center;">
-        <button class="btn btn-primary" onclick="window.print()">立即打印</button>
-        <p>提示：建议使用 Chrome 浏览器，开启“背景图形”打印选项。</p>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ 立即打印</button>
+        <p style="color:#666;margin-top:10px;">提示：建议使用 Chrome 浏览器，开启"背景图形"打印选项。</p>
     </div>
 
     <div class="page">
@@ -55,25 +59,40 @@
 
     <script>
         async function load() {
-            const res = await fetch('/api/accounts');
-            if (!res.ok) return;
-            const accounts = await res.json();
-            const container = document.getElementById('ticket-list');
-            
-            accounts.forEach(acc => {
-                const ticket = document.createElement('div');
-                ticket.className = 'ticket';
-                ticket.innerHTML = `
-                    <div class="logo">✨ 星河记忆纪念凭据</div>
-                    <div class="info"><strong>用户名:</strong> ${acc.username}</div>
-                    <div class="info"><strong>初始角色:</strong> ${acc.role}</div>
-                    <div class="info"><strong>访问地址:</strong> ${window.location.origin}</div>
-                    <div style="margin-top:10px; font-size:0.7rem; color:#666;">
-                        注：请妥善保管账号，首次登录后建议修改密码。
-                    </div>
-                `;
-                container.appendChild(ticket);
-            });
+            const user = Auth.getUser();
+            if (!user || user.role !== 'head') {
+                document.getElementById('ticket-list').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#ff4d4d;">⚠️ 仅总管可查看凭据</p>';
+                return;
+            }
+
+            try {
+                const accounts = await Storage.readJSON('/db/users.json');
+                const container = document.getElementById('ticket-list');
+                container.innerHTML = '';
+                
+                if (!accounts || !Array.isArray(accounts) || accounts.length === 0) {
+                    container.innerHTML = '<p style="grid-column:1/-1;text-align:center;">暂无账号</p>';
+                    return;
+                }
+
+                accounts.forEach(acc => {
+                    const ticket = document.createElement('div');
+                    ticket.className = 'ticket';
+                    ticket.innerHTML = `
+                        <div class="logo">✨ 星河记忆纪念凭据</div>
+                        <div class="info"><strong>用户名:</strong> ${acc.username}</div>
+                        <div class="info"><strong>初始角色:</strong> ${acc.role}</div>
+                        <div class="info"><strong>访问地址:</strong> ${window.location.origin}</div>
+                        <div style="margin-top:10px; font-size:0.7rem; color:#666;">
+                            注：请妥善保管账号，首次登录后建议修改密码。
+                        </div>
+                    `;
+                    container.appendChild(ticket);
+                });
+            } catch (e) {
+                console.error('[Print] 加载账号失败:', e);
+                document.getElementById('ticket-list').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#ff4d4d;">加载失败: ' + e.message + '</p>';
+            }
         }
         load();
     </script>

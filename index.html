@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>星河记忆 - 我们的毕业纪念</title>
     <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/galaxy.js"></script>
 </head>
 <body>
-    <div id="stars-container">
-        <div class="star-layer star-layer-1"></div>
-        <div class="star-layer star-layer-2"></div>
-        <div class="star-layer star-layer-3"></div>
-    </div>
+    <canvas id="galaxy-canvas"></canvas>
 
     <nav class="glass">
         <div class="logo">✨ 星河记忆</div>
@@ -44,10 +44,9 @@
     </div>
 
     <script>
-        async function checkAuth() {
-            const res = await fetch('/api/me');
-            if (res.ok) {
-                const user = await res.json();
+        function initAuth() {
+            const user = Auth.getUser();
+            if (user) {
                 document.getElementById('login-link').classList.add('hidden');
                 document.getElementById('logout-link').classList.remove('hidden');
                 if (user.role === 'admin' || user.role === 'head') {
@@ -57,34 +56,65 @@
         }
 
         async function loadContent() {
-            const res = await fetch('/api/content?type=approved');
-            const items = await res.json();
             const grid = document.getElementById('grid');
             
-            items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card glass glow-border';
+            try {
+                // Try to load approved content from WebDAV
+                const files = await Storage.list('/exhibition/approved');
                 
-                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name);
-                const isVideo = /\.(mp4|webm)$/i.test(item.name);
-
-                if (isImage) {
-                    card.innerHTML = `<img src="${item.url}" alt="${item.name}" onclick="preview('${item.url}', 'img')">`;
-                } else if (isVideo) {
-                    card.innerHTML = `<video src="${item.url}" muted onmouseover="this.play()" onmouseout="this.pause()" onclick="preview('${item.url}', 'video')"></video>`;
+                if (!files || files.length === 0) {
+                    grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">暂无展览内容，敬请期待 ✨</p>';
+                    return;
                 }
-                
-                grid.appendChild(card);
-            });
+
+                for (const filePath of files) {
+                    const name = filePath.split('/').pop();
+                    if (!name) continue;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card glass glow-border';
+                    
+                    // Build the full URL to the file
+                    const baseUrl = getBaseUrl();
+                    const fileUrl = `${baseUrl}/exhibition/approved/${name}`;
+                    
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
+                    const isVideo = /\.(mp4|webm)$/i.test(name);
+
+                    if (isImage) {
+                        card.innerHTML = `<img src="${fileUrl}" alt="${name}" onclick="preview('${fileUrl}', 'img')">`;
+                    } else if (isVideo) {
+                        card.innerHTML = `<video src="${fileUrl}" muted onmouseover="this.play()" onmouseout="this.pause()" onclick="preview('${fileUrl}', 'video')"></video>`;
+                    } else {
+                        continue;
+                    }
+                    
+                    grid.appendChild(card);
+                }
+            } catch (e) {
+                console.warn('[Index] 加载展览内容失败:', e);
+                grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">😴 展览馆正在布置中...</p>';
+            }
+        }
+
+        function getBaseUrl() {
+            if (!GALAXY_WEBDAV_URL) return '';
+            const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
+            try {
+                const parsed = new URL(url);
+                return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+            } catch {
+                return url;
+            }
         }
 
         function preview(url, type) {
             const overlay = document.getElementById('preview-overlay');
             const content = overlay.querySelector('.overlay-content');
             if (type === 'img') {
-                content.innerHTML = `<img src="${url}" style="max-width:100%; max-height:100%;">`;
+                content.innerHTML = `<img src="${url}" style="max-width:100%; max-height:100%;border-radius:10px;">`;
             } else {
-                content.innerHTML = `<video src="${url}" controls autoplay style="max-width:100%; max-height:100%;"></video>`;
+                content.innerHTML = `<video src="${url}" controls autoplay style="max-width:100%; max-height:100%;border-radius:10px;"></video>`;
             }
             overlay.style.display = 'flex';
         }
@@ -93,13 +123,14 @@
             this.style.display = 'none';
         };
 
-        document.getElementById('logout-link').onclick = async (e) => {
+        document.getElementById('logout-link').onclick = (e) => {
             e.preventDefault();
-            await fetch('/api/logout');
+            Auth.logout();
             location.reload();
         };
 
-        checkAuth();
+        Galaxy.init();
+        initAuth();
         loadContent();
     </script>
 </body>

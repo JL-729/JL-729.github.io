@@ -5,51 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - 星河记忆</title>
     <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/galaxy.js"></script>
 </head>
 <body>
-    <div id="stars-container">
-        <div class="star-layer star-layer-1"></div>
-        <div class="star-layer star-layer-2"></div>
-        <div class="star-layer star-layer-3"></div>
-    </div>
+    <canvas id="galaxy-canvas"></canvas>
 
-    <div style="display: flex; height: 100vh; align-items: center; justify-content: center;">
+    <div style="display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
         <div class="glass card glow-border" style="width: 100%; max-width: 400px; padding: 2rem;">
-            <h1 style="text-align: center; margin-bottom: 2rem;">登入星河</h1>
+            <h1 style="text-align: center; margin-bottom: 0.5rem;">✨ 登入星河</h1>
+            <p style="text-align: center; color: rgba(255,255,255,0.6); margin-bottom: 2rem;">输入你的宇宙通行证</p>
             <form id="login-form">
                 <div style="margin-bottom: 1rem;">
-                    <input type="text" id="username" placeholder="用户名" class="glass" style="width: 100%; box-sizing: border-box;" required>
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; opacity: 0.8;">用户名</label>
+                    <input type="text" id="username" placeholder="输入用户名..." class="glass" style="width: 100%; box-sizing: border-box;" required>
                 </div>
                 <div style="margin-bottom: 2rem;">
-                    <input type="password" id="password" placeholder="密码" class="glass" style="width: 100%; box-sizing: border-box;" required>
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; opacity: 0.8;">密码</label>
+                    <input type="password" id="password" placeholder="输入密码..." class="glass" style="width: 100%; box-sizing: border-box;" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">开启记忆之门</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem;">开启记忆之门</button>
             </form>
             <div id="error-msg" style="color: #ff4d4d; text-align: center; margin-top: 1rem;"></div>
         </div>
     </div>
 
     <script>
+        Galaxy.init();
+
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-msg');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
 
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                body: JSON.stringify({ username, password })
-            });
+            errorMsg.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '验证中...';
 
-            if (res.ok) {
-                const data = await res.json();
-                if (data.role === 'head' || data.role === 'admin') {
+            const result = await Auth.login(username, password);
+
+            if (result.success) {
+                if (result.role === 'head' || result.role === 'admin') {
                     location.href = 'admin.html';
                 } else {
                     location.href = 'index.html';
                 }
             } else {
-                errorMsg.textContent = '用户名或密码错误';
+                errorMsg.textContent = '用户名或密码错误，请重试';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '开启记忆之门';
             }
         };
     </script>
