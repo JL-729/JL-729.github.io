@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同学录 - 星河记忆</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .alumni-form { max-width: 600px; margin: 0 auto 32px; }
+    .alumni-grid { display: grid; gap: 16px; }
+    .alumni-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: all 0.3s; }
+    .alumni-card:hover { background: var(--bg-card-hover); }
+    .alumni-card h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .alumni-card .meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .alumni-card .message { font-size: 0.9rem; color: var(--text); line-height: 1.6; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-top: 8px; }
+    .alumni-card .contact { font-size: 0.85rem; color: var(--accent); margin-top: 8px; }
+    .alumni-card .actions { display: flex; gap: 8px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo">✦ 星河记忆</a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/alumni.html" class="active">同学录</a>
+      <a href="/exhibition.html">展览馆</a>
+      <a href="/confession.html">表白墙</a>
+      <a href="/login.html" id="loginLink">登录</a>
+      <a href="#" id="logoutLink" style="display:none" onclick="logout()">退出</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>📖 同学录</h1>
+      <p>留下你的信息与祝福，让友谊天长地久</p>
+    </div>
+
+    <div class="alumni-form">
+      <div class="card">
+        <h3 style="margin-bottom:16px">✏️ 填写信息</h3>
+        <form id="alumniForm">
+          <div class="form-group">
+            <label>姓名 *</label>
+            <input type="text" class="form-input" id="name" placeholder="你的名字" required>
+          </div>
+          <div class="form-group">
+            <label>班级</label>
+            <input type="text" class="form-input" id="class" placeholder="如：高三(1)班">
+          </div>
+          <div class="form-group">
+            <label>毕业年份</label>
+            <input type="text" class="form-input" id="year" placeholder="如：2024">
+          </div>
+          <div class="form-group">
+            <label>寄语 / 留言</label>
+            <textarea class="form-textarea" id="message" placeholder="想对大家说的话..." rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>联系方式</label>
+            <input type="text" class="form-input" id="contact" placeholder="微信 / QQ / 手机号">
+          </div>
+          <button type="submit" class="btn btn-primary">提交信息</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <h3>💫 同学列表 (<span id="count">0</span> 人)</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadAlumni()">刷新</button>
+    </div>
+
+    <div id="alumniList" class="alumni-grid"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // Check login status
+    const userToken = localStorage.getItem('token');
+    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+    if (userToken && userData) {
+      document.getElementById('loginLink').style.display = 'none';
+      document.getElementById('logoutLink').style.display = 'inline-flex';
+    }
+
+    async function loadAlumni() {
+      const list = document.getElementById('alumniList');
+      const count = document.getElementById('count');
+      list.innerHTML = '<div class="loading">加载中</div>';
+
+      try {
+        const data = await API.getAlumni();
+        count.textContent = data.length;
+
+        if (data.length === 0) {
+          list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>还没有同学留下信息，快来当第一个吧！</p></div>';
+          return;
+        }
+
+        list.innerHTML = data.reverse().map(item => `
+          <div class="alumni-card">
+            <h3>${escapeHtml(item.name)}</h3>
+            <div class="meta">${item.class ? `🏫 ${escapeHtml(item.class)}` : ''} ${item.graduationYear ? `· 🎓 ${escapeHtml(item.graduationYear)}届` : ''} · ${formatDate(item.createdAt)}</div>
+            ${item.message ? `<div class="message">💬 ${escapeHtml(item.message)}</div>` : ''}
+            ${item.contact ? `<div class="contact">📞 ${escapeHtml(item.contact)}</div>` : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    document.getElementById('alumniForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = '提交中...';
+
+      try {
+        await API.addAlumni({
+          name: document.getElementById('name').value.trim(),
+          class: document.getElementById('class').value.trim(),
+          graduationYear: document.getElementById('year').value.trim(),
+          message: document.getElementById('message').value.trim(),
+          contact: document.getElementById('contact').value.trim(),
+        });
+        showToast('提交成功！', 'success');
+        e.target.reset();
+        loadAlumni();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '提交信息';
+      }
+    });
+
+    loadAlumni();
+  </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电子展览馆 - 星河记忆</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .exhibition-grid { display: grid; gap: 20px; }
+    .exh-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: all 0.3s; }
+    .exh-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+    .exh-card .image-wrapper { width: 100%; height: 200px; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; }
+    .exh-card .image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .exh-card .image-wrapper .placeholder { color: var(--text-muted); font-size: 0.9rem; }
+    .exh-card h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .exh-card .meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .exh-card .desc { font-size: 0.9rem; color: var(--text); line-height: 1.6; }
+    .exh-card .badge { margin-bottom: 8px; display: inline-block; }
+    .upload-form { max-width: 600px; margin: 0 auto 32px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo">✦ 星河记忆</a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/alumni.html">同学录</a>
+      <a href="/exhibition.html" class="active">展览馆</a>
+      <a href="/confession.html">表白墙</a>
+      <a href="/login.html" id="loginLink">登录</a>
+      <a href="#" id="logoutLink" style="display:none" onclick="logout()">退出</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>🖼️ 电子展览馆</h1>
+      <p>展示我们的作品与回忆，每一帧都是青春</p>
+    </div>
+
+    <div class="upload-form">
+      <div class="card">
+        <h3 style="margin-bottom:16px">📤 上传作品</h3>
+        <form id="exhForm">
+          <div class="form-group">
+            <label>作品标题 *</label>
+            <input type="text" class="form-input" id="title" placeholder="作品名称" required>
+          </div>
+          <div class="form-group">
+            <label>作者</label>
+            <input type="text" class="form-input" id="author" placeholder="作者姓名">
+          </div>
+          <div class="form-group">
+            <label>类型</label>
+            <select class="form-select" id="type">
+              <option value="photo">📷 摄影</option>
+              <option value="art">🎨 绘画</option>
+              <option value="writing">✍️ 文章</option>
+              <option value="memory">💭 回忆</option>
+              <option value="other">📦 其他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>图片链接</label>
+            <input type="url" class="form-input" id="imageUrl" placeholder="https://example.com/image.jpg (可选)">
+          </div>
+          <div class="form-group">
+            <label>作品描述</label>
+            <textarea class="form-textarea" id="description" placeholder="描述你的作品..." rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">发布作品</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <h3>✨ 全部作品 (<span id="count">0</span>)</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadExhibitions()">刷新</button>
+    </div>
+
+    <div id="exhList" class="exhibition-grid"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const userToken = localStorage.getItem('token');
+    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+    if (userToken && userData) {
+      document.getElementById('loginLink').style.display = 'none';
+      document.getElementById('logoutLink').style.display = 'inline-flex';
+    }
+
+    async function loadExhibitions() {
+      const list = document.getElementById('exhList');
+      const count = document.getElementById('count');
+      list.innerHTML = '<div class="loading">加载中</div>';
+
+      try {
+        const data = await API.getExhibitions();
+        count.textContent = data.length;
+
+        if (data.length === 0) {
+          list.innerHTML = '<div class="empty-state"><div class="icon">🖼️</div><p>展览馆还空空如也，快来上传第一件作品吧！</p></div>';
+          return;
+        }
+
+        const typeLabels = { photo: '📷 摄影', art: '🎨 绘画', writing: '✍️ 文章', memory: '💭 回忆', other: '📦 其他' };
+
+        list.innerHTML = data.reverse().map(item => `
+          <div class="exh-card">
+            <span class="badge badge-user">${typeLabels[item.type] || '📦 其他'}</span>
+            ${item.imageUrl ? `
+              <div class="image-wrapper">
+                <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🖼️ 图片加载失败</div>'">
+              </div>
+            ` : ''}
+            <h3>${escapeHtml(item.title)}</h3>
+            <div class="meta">${item.author ? `👤 ${escapeHtml(item.author)}` : '匿名'} · ${formatDate(item.createdAt)}</div>
+            ${item.description ? `<div class="desc">${escapeHtml(item.description)}</div>` : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    document.getElementById('exhForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = '发布中...';
+
+      try {
+        await API.addExhibition({
+          title: document.getElementById('title').value.trim(),
+          author: document.getElementById('author').value.trim(),
+          type: document.getElementById('type').value,
+          imageUrl: document.getElementById('imageUrl').value.trim(),
+          description: document.getElementById('description').value.trim(),
+        });
+        showToast('发布成功！', 'success');
+        e.target.reset();
+        loadExhibitions();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '发布作品';
+      }
+    });
+
+    loadExhibitions();
+  </script>
+</body>
+</html>

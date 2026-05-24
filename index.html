@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星河记忆 - 毕业纪念平台</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .hero { padding: 80px 20px 40px; }
+    .hero .subtitle { font-size: 1rem; color: var(--text-muted); margin-top: 4px; }
+    .footer-text { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 40px 20px; border-top: 1px solid var(--border); margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo">✦ 星河记忆</a>
+    <div class="nav-links">
+      <a href="/login.html" id="loginLink">登录</a>
+      <a href="/admin.html" id="adminLink" style="display:none">管理</a>
+      <a href="#" id="logoutLink" style="display:none" onclick="logout()">退出</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>✦ 星河记忆</h1>
+      <p>每一段青春都像星河里的光，即使散落天涯，依然彼此照亮。</p>
+      <p class="subtitle">—— 毕业纪念平台 · 永远的同学录</p>
+    </div>
+
+    <div class="entry-grid">
+      <a href="/alumni.html" class="entry-card">
+        <div class="icon">📖</div>
+        <h3>同学录</h3>
+        <p>留下你的联系方式与祝福，让友谊永不散场</p>
+      </a>
+      <a href="/exhibition.html" class="entry-card">
+        <div class="icon">🖼️</div>
+        <h3>电子展览馆</h3>
+        <p>展示我们的作品与回忆，一起走过的岁月</p>
+      </a>
+      <a href="/confession.html" class="entry-card">
+        <div class="icon">💌</div>
+        <h3>表白墙</h3>
+        <p>把藏在心里的话说出来，青春不留遗憾</p>
+      </a>
+    </div>
+
+    <div class="footer-text">
+      ✦ 星河记忆 · 献给永远的我们 ✦
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const loginLink = document.getElementById('loginLink');
+    const adminLink = document.getElementById('adminLink');
+    const logoutLink = document.getElementById('logoutLink');
+
+    if (token && user) {
+      loginLink.style.display = 'none';
+      logoutLink.style.display = 'inline-flex';
+      if (user.role === 'admin') {
+        adminLink.style.display = 'inline-flex';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

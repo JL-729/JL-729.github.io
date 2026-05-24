@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>表白墙 - 星河记忆</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .confession-form { max-width: 600px; margin: 0 auto 32px; }
+    .confession-list { display: grid; gap: 16px; }
+    .confession-card { background: linear-gradient(135deg, rgba(253, 121, 168, 0.05), rgba(108, 92, 231, 0.05)); border: 1px solid rgba(253, 121, 168, 0.15); border-radius: var(--radius); padding: 24px; transition: all 0.3s; position: relative; }
+    .confession-card:hover { border-color: rgba(253, 121, 168, 0.3); transform: translateY(-2px); }
+    .confession-card .heart { position: absolute; top: 12px; right: 16px; font-size: 1.5rem; opacity: 0.15; }
+    .confession-card .from { font-size: 0.85rem; color: var(--secondary); font-weight: 600; }
+    .confession-card .to { font-size: 0.85rem; color: var(--primary-light); }
+    .confession-card .content { font-size: 1rem; line-height: 1.8; margin: 12px 0; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+    .confession-card .time { font-size: 0.8rem; color: var(--text-muted); }
+    .confession-card .anonymous-badge { font-size: 0.75rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; }
+    .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--secondary); }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo">✦ 星河记忆</a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/alumni.html">同学录</a>
+      <a href="/exhibition.html">展览馆</a>
+      <a href="/confession.html" class="active">表白墙</a>
+      <a href="/login.html" id="loginLink">登录</a>
+      <a href="#" id="logoutLink" style="display:none" onclick="logout()">退出</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>💌 表白墙</h1>
+      <p>把藏在心里的话说出来，青春不留遗憾</p>
+    </div>
+
+    <div class="confession-form">
+      <div class="card">
+        <h3 style="margin-bottom:16px">✍️ 写表白</h3>
+        <form id="confessionForm">
+          <div class="form-group">
+            <label>你的名字</label>
+            <input type="text" class="form-input" id="from" placeholder="你的名字（留空则匿名）">
+          </div>
+          <div class="form-group">
+            <label>表白对象</label>
+            <input type="text" class="form-input" id="to" placeholder="你想对谁说" value="某人">
+          </div>
+          <div class="form-group">
+            <label>表白内容 *</label>
+            <textarea class="form-textarea" id="content" placeholder="写下你想说的话..." rows="4" required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="anonymous" checked>
+              匿名发送
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,var(--secondary),#e84393)">💕 发布表白</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <h3>💝 表白列表</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadConfessions()">刷新</button>
+    </div>
+
+    <div id="confessionList" class="confession-list"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const userToken = localStorage.getItem('token');
+    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+    if (userToken && userData) {
+      document.getElementById('loginLink').style.display = 'none';
+      document.getElementById('logoutLink').style.display = 'inline-flex';
+    }
+
+    async function loadConfessions() {
+      const list = document.getElementById('confessionList');
+      list.innerHTML = '<div class="loading">加载中</div>';
+
+      try {
+        const data = await API.getConfessions();
+
+        if (data.length === 0) {
+          list.innerHTML = '<div class="empty-state"><div class="icon">💌</div><p>还没有表白，勇敢说出你的心声吧！</p></div>';
+          return;
+        }
+
+        list.innerHTML = data.map(item => `
+          <div class="confession-card">
+            <div class="heart">💕</div>
+            <div>
+              <span class="from">${escapeHtml(item.from)}</span>
+              ${item.anonymous ? '<span class="anonymous-badge">匿名</span>' : ''}
+              <span style="color:var(--text-muted);margin:0 6px;">→</span>
+              <span class="to">${escapeHtml(item.to)}</span>
+            </div>
+            <div class="content">${escapeHtml(item.content)}</div>
+            <div class="time">${formatDate(item.createdAt)}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    document.getElementById('confessionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = '发布中...';
+
+      try {
+        await API.addConfession({
+          from: document.getElementById('from').value.trim(),
+          to: document.getElementById('to').value.trim() || '某人',
+          content: document.getElementById('content').value.trim(),
+          anonymous: document.getElementById('anonymous').checked,
+        });
+        showToast('表白已发布！💕', 'success');
+        e.target.reset();
+        document.getElementById('anonymous').checked = true;
+        loadConfessions();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💕 发布表白';
+      }
+    });
+
+    loadConfessions();
+  </script>
+</body>
+</html>
