@@ -1,0 +1,14 @@
+{
+  "name": "galaxy-memory",
+  "version": "1.0.0",
+  "main": "worker.ts",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240405.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.50.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  }
+}

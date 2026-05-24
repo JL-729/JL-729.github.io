@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星河记忆 - 纪念网站</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>✨ 星河记忆</h1>
+        <nav id="nav-links">
+            <a href="index.html">首页</a>
+            <a href="login.html" id="login-link">登录</a>
+            <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
+            <a href="#" id="logout-link" class="hidden">注销</a>
+        </nav>
+    </header>
+    <main>
+        <section id="hero" class="card">
+            <h2>永远的记忆</h2>
+            <p>在这里，我们留存光影，书写心声。星河长明，记忆永存。</p>
+        </section>
+
+        <h3>展览馆 (已审核)</h3>
+        <div id="exhibition-grid" class="grid">
+            <!-- 内容将通过 JS 加载 -->
+        </div>
+
+        <h3>同学录 / 表白墙</h3>
+        <p>通过 WebDAV 客户端上传或在后台管理。</p>
+    </main>
+
+    <script>
+        async function checkAuth() {
+            const res = await fetch('/api/me');
+            if (res.ok) {
+                const user = await res.json();
+                document.getElementById('login-link').classList.add('hidden');
+                document.getElementById('logout-link').classList.remove('hidden');
+                if (user.role === 'admin' || user.role === 'head') {
+                    document.getElementById('admin-link').classList.remove('hidden');
+                }
+            }
+        }
+
+        async function loadExhibition() {
+            // 这里简单模拟从 WebDAV/R2 获取已审核列表
+            // 实际可以通过一个 API 来获取列表更方便
+            // 为了简单，我们先不实现复杂的列表 API，或者直接用 PROPFIND
+            const res = await fetch('/exhibition/approved/', { method: 'PROPFIND', headers: { 'Depth': '1' } });
+            if (res.ok) {
+                const text = await res.text();
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, "application/xml");
+                const responses = xml.getElementsByTagName("d:response");
+                const grid = document.getElementById('exhibition-grid');
+                
+                for (let i = 1; i < responses.length; i++) { // Skip the first one which is the folder itself
+                    const href = responses[i].getElementsByTagName("d:href")[0].textContent;
+                    const item = document.createElement('div');
+                    item.className = 'item';
+                    
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(href);
+                    const isVideo = /\.(mp4|webm)$/i.test(href);
+
+                    if (isImage) {
+                        item.innerHTML = `<img src="${href}" alt="Memory"><div class="item-info">文件: ${href.split('/').pop()}</div>`;
+                    } else if (isVideo) {
+                        item.innerHTML = `<video src="${href}" controls></video><div class="item-info">视频: ${href.split('/').pop()}</div>`;
+                    } else {
+                        item.innerHTML = `<div class="item-info">文件: <a href="${href}">${href.split('/').pop()}</a></div>`;
+                    }
+                    grid.appendChild(item);
+                }
+            }
+        }
+
+        document.getElementById('logout-link').onclick = async (e) => {
+            e.preventDefault();
+            await fetch('/api/logout');
+            location.reload();
+        };
+
+        checkAuth();
+        loadExhibition();
+    </script>
+</body>
+</html>
