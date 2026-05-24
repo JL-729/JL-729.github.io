@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 星河记忆</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="login-container" class="card">
+        <h2>登录</h2>
+        <form id="login-form">
+            <div style="display: flex; flex-direction: column;">
+                <label>用户名</label>
+                <input type="text" id="username" required>
+                <label>密码</label>
+                <input type="password" id="password" required>
+                <button type="submit">登录</button>
+            </div>
+            <p id="error" class="error-color hidden"></p>
+        </form>
+        <p><a href="index.html" style="color: var(--secondary-color);">返回首页</a></p>
+    </div>
+
+    <script>
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('error');
+
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (res.ok) {
+                location.href = 'index.html';
+            } else {
+                const data = await res.json();
+                errorEl.textContent = data.error || '登录失败';
+                errorEl.classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>

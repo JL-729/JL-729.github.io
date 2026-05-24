@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打印账号凭据 - 星河记忆</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: white; color: black; padding: 20px; }
+        .ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .ticket { border: 2px dashed #333; padding: 15px; border-radius: 8px; }
+        .ticket h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()">打印</button>
+        <button onclick="clearTickets()">清除记录</button>
+        <button onclick="location.href='admin.html'">返回后台</button>
+    </div>
+    
+    <h2>待打印账号凭据</h2>
+    <div id="ticket-grid" class="ticket-grid"></div>
+
+    <script>
+        function loadTickets() {
+            const tickets = JSON.parse(localStorage.getItem('new_tickets') || '[]');
+            const grid = document.getElementById('ticket-grid');
+            grid.innerHTML = '';
+            tickets.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'ticket';
+                div.innerHTML = `
+                    <h3>星河记忆 凭据</h3>
+                    <p><strong>用户名:</strong> ${t.username}</p>
+                    <p><strong>初始密码:</strong> ${t.password}</p>
+                    <p style="font-size: 0.8rem; color: #666;">请妥善保管您的账号信息。</p>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function clearTickets() {
+            if (confirm('确定要清除所有待打印记录吗？')) {
+                localStorage.removeItem('new_tickets');
+                loadTickets();
+            }
+        }
+
+        loadTickets();
+    </script>
+</body>
+</html>
