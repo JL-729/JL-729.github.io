@@ -2,53 +2,80 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>打印账号凭据 - 星河记忆</title>
+    <title>打印凭据 - 星河记忆</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: white; color: black; padding: 20px; }
-        .ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .ticket { border: 2px dashed #333; padding: 15px; border-radius: 8px; }
-        .ticket h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        @media print { .no-print { display: none; } }
+        body { background: white; color: black; }
+        .page {
+            width: 210mm;
+            padding: 10mm;
+            margin: auto;
+        }
+        .ticket-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .ticket {
+            border: 1px dashed #ccc;
+            padding: 15px;
+            position: relative;
+            height: 50mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #f9f9f9;
+        }
+        .ticket .logo {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #302b63;
+        }
+        .ticket .info {
+            font-size: 0.9rem;
+            margin: 2px 0;
+        }
+        @media print {
+            .no-print { display: none; }
+            .page { padding: 0; margin: 0; }
+        }
     </style>
 </head>
 <body>
-    <div class="no-print" style="margin-bottom: 20px;">
-        <button onclick="window.print()">打印</button>
-        <button onclick="clearTickets()">清除记录</button>
-        <button onclick="location.href='admin.html'">返回后台</button>
+    <div class="no-print" style="padding: 20px; text-align: center;">
+        <button class="btn btn-primary" onclick="window.print()">立即打印</button>
+        <p>提示：建议使用 Chrome 浏览器，开启“背景图形”打印选项。</p>
     </div>
-    
-    <h2>待打印账号凭据</h2>
-    <div id="ticket-grid" class="ticket-grid"></div>
+
+    <div class="page">
+        <div id="ticket-list" class="ticket-container">
+            <!-- Tickets will be generated here -->
+        </div>
+    </div>
 
     <script>
-        function loadTickets() {
-            const tickets = JSON.parse(localStorage.getItem('new_tickets') || '[]');
-            const grid = document.getElementById('ticket-grid');
-            grid.innerHTML = '';
-            tickets.forEach(t => {
-                const div = document.createElement('div');
-                div.className = 'ticket';
-                div.innerHTML = `
-                    <h3>星河记忆 凭据</h3>
-                    <p><strong>用户名:</strong> ${t.username}</p>
-                    <p><strong>初始密码:</strong> ${t.password}</p>
-                    <p style="font-size: 0.8rem; color: #666;">请妥善保管您的账号信息。</p>
+        async function load() {
+            const res = await fetch('/api/accounts');
+            if (!res.ok) return;
+            const accounts = await res.json();
+            const container = document.getElementById('ticket-list');
+            
+            accounts.forEach(acc => {
+                const ticket = document.createElement('div');
+                ticket.className = 'ticket';
+                ticket.innerHTML = `
+                    <div class="logo">✨ 星河记忆纪念凭据</div>
+                    <div class="info"><strong>用户名:</strong> ${acc.username}</div>
+                    <div class="info"><strong>初始角色:</strong> ${acc.role}</div>
+                    <div class="info"><strong>访问地址:</strong> ${window.location.origin}</div>
+                    <div style="margin-top:10px; font-size:0.7rem; color:#666;">
+                        注：请妥善保管账号，首次登录后建议修改密码。
+                    </div>
                 `;
-                grid.appendChild(div);
+                container.appendChild(ticket);
             });
         }
-
-        function clearTickets() {
-            if (confirm('确定要清除所有待打印记录吗？')) {
-                localStorage.removeItem('new_tickets');
-                loadTickets();
-            }
-        }
-
-        loadTickets();
+        load();
     </script>
 </body>
 </html>

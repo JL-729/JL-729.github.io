@@ -3,33 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星河记忆 - 纪念网站</title>
+    <title>星河记忆 - 我们的毕业纪念</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>✨ 星河记忆</h1>
-        <nav id="nav-links">
+    <div id="stars-container">
+        <div class="star-layer star-layer-1"></div>
+        <div class="star-layer star-layer-2"></div>
+        <div class="star-layer star-layer-3"></div>
+    </div>
+
+    <nav class="glass">
+        <div class="logo">✨ 星河记忆</div>
+        <div class="links">
             <a href="index.html">首页</a>
-            <a href="login.html" id="login-link">登录</a>
+            <a href="alumni.html">同学录</a>
+            <a href="confession.html">表白墙</a>
             <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
+            <a href="login.html" id="login-link">登录</a>
             <a href="#" id="logout-link" class="hidden">注销</a>
-        </nav>
-    </header>
+        </div>
+    </nav>
+
     <main>
-        <section id="hero" class="card">
-            <h2>永远的记忆</h2>
-            <p>在这里，我们留存光影，书写心声。星河长明，记忆永存。</p>
+        <section class="hero">
+            <h1>星河长明，记忆永存</h1>
+            <p>在那片星空下，我们曾共同走过。这不仅仅是一个网站，更是我们共同拥有的星系。</p>
         </section>
 
-        <h3>展览馆 (已审核)</h3>
-        <div id="exhibition-grid" class="grid">
-            <!-- 内容将通过 JS 加载 -->
-        </div>
-
-        <h3>同学录 / 表白墙</h3>
-        <p>通过 WebDAV 客户端上传或在后台管理。</p>
+        <section id="exhibition">
+            <h2 style="text-align: center; margin-bottom: 2rem;">记忆展览馆</h2>
+            <div id="grid" class="grid">
+                <!-- Items will be loaded here -->
+            </div>
+        </section>
     </main>
+
+    <div id="preview-overlay" class="overlay">
+        <div class="overlay-content"></div>
+    </div>
 
     <script>
         async function checkAuth() {
@@ -44,37 +56,42 @@
             }
         }
 
-        async function loadExhibition() {
-            // 这里简单模拟从 WebDAV/R2 获取已审核列表
-            // 实际可以通过一个 API 来获取列表更方便
-            // 为了简单，我们先不实现复杂的列表 API，或者直接用 PROPFIND
-            const res = await fetch('/exhibition/approved/', { method: 'PROPFIND', headers: { 'Depth': '1' } });
-            if (res.ok) {
-                const text = await res.text();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(text, "application/xml");
-                const responses = xml.getElementsByTagName("d:response");
-                const grid = document.getElementById('exhibition-grid');
+        async function loadContent() {
+            const res = await fetch('/api/content?type=approved');
+            const items = await res.json();
+            const grid = document.getElementById('grid');
+            
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card glass glow-border';
                 
-                for (let i = 1; i < responses.length; i++) { // Skip the first one which is the folder itself
-                    const href = responses[i].getElementsByTagName("d:href")[0].textContent;
-                    const item = document.createElement('div');
-                    item.className = 'item';
-                    
-                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(href);
-                    const isVideo = /\.(mp4|webm)$/i.test(href);
+                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name);
+                const isVideo = /\.(mp4|webm)$/i.test(item.name);
 
-                    if (isImage) {
-                        item.innerHTML = `<img src="${href}" alt="Memory"><div class="item-info">文件: ${href.split('/').pop()}</div>`;
-                    } else if (isVideo) {
-                        item.innerHTML = `<video src="${href}" controls></video><div class="item-info">视频: ${href.split('/').pop()}</div>`;
-                    } else {
-                        item.innerHTML = `<div class="item-info">文件: <a href="${href}">${href.split('/').pop()}</a></div>`;
-                    }
-                    grid.appendChild(item);
+                if (isImage) {
+                    card.innerHTML = `<img src="${item.url}" alt="${item.name}" onclick="preview('${item.url}', 'img')">`;
+                } else if (isVideo) {
+                    card.innerHTML = `<video src="${item.url}" muted onmouseover="this.play()" onmouseout="this.pause()" onclick="preview('${item.url}', 'video')"></video>`;
                 }
-            }
+                
+                grid.appendChild(card);
+            });
         }
+
+        function preview(url, type) {
+            const overlay = document.getElementById('preview-overlay');
+            const content = overlay.querySelector('.overlay-content');
+            if (type === 'img') {
+                content.innerHTML = `<img src="${url}" style="max-width:100%; max-height:100%;">`;
+            } else {
+                content.innerHTML = `<video src="${url}" controls autoplay style="max-width:100%; max-height:100%;"></video>`;
+            }
+            overlay.style.display = 'flex';
+        }
+
+        document.getElementById('preview-overlay').onclick = function() {
+            this.style.display = 'none';
+        };
 
         document.getElementById('logout-link').onclick = async (e) => {
             e.preventDefault();
@@ -83,7 +100,7 @@
         };
 
         checkAuth();
-        loadExhibition();
+        loadContent();
     </script>
 </body>
 </html>

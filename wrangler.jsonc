@@ -1,28 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "jl729",
-  "main": "worker.ts",
   "compatibility_date": "2024-04-05",
-  "observability": {
-    "enabled": true
-  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS"
   },
-  "kv_namespaces": [
-    {
-      "binding": "GALAXY_ACCOUNTS",
-      "id": "GALAXY_ACCOUNTS_ID"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "GALAXY_STORAGE",
-      "bucket_name": "galaxy-storage"
-    }
-  ],
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  "vars": {
+    "WEBDAV_URL": "YOUR_WEBDAV_URL",
+    "WEBDAV_USER": "YOUR_WEBDAV_USER",
+    "WEBDAV_PASS": "YOUR_WEBDAV_PASS",
+    "JWT_SECRET": "YOUR_JWT_SECRET"
+  }
 }
