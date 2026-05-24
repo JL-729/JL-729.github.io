@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同学录 - 星河记忆</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .polaroid {
+            background: white;
+            padding: 10px 10px 30px 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transform: rotate(-2deg);
+            max-width: 250px;
+            color: #333;
+            text-align: center;
+        }
+        .polaroid img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .polaroid .name {
+            font-family: 'Kaiti', serif;
+            font-size: 1.5rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="stars-container">
+        <div class="star-layer star-layer-1"></div>
+        <div class="star-layer star-layer-2"></div>
+        <div class="star-layer star-layer-3"></div>
+    </div>
+
+    <nav class="glass">
+        <div class="logo">✨ 星河记忆</div>
+        <div class="links">
+            <a href="index.html">首页</a>
+            <a href="alumni.html">同学录</a>
+            <a href="confession.html">表白墙</a>
+            <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
+            <a href="login.html" id="login-link">登录</a>
+        </div>
+    </nav>
+
+    <main>
+        <h1 style="text-align: center;">星图同学录</h1>
+        <p style="text-align: center;">每一颗星，都是一个闪光的你</p>
+        
+        <div id="star-map" class="glass">
+            <!-- Stars will be generated here -->
+        </div>
+
+        <section class="glass" style="margin-top: 2rem; padding: 2rem;">
+            <h2>加入星图</h2>
+            <div class="grid" style="grid-template-columns: 1fr;">
+                <input type="text" id="alumni-name" placeholder="姓名" class="glass">
+                <input type="text" id="alumni-photo" placeholder="照片 URL" class="glass">
+                <input type="text" id="alumni-wish" placeholder="寄语" class="glass">
+                <button class="btn btn-primary" onclick="addAlumni()">点亮我的星</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="preview-overlay" class="overlay">
+        <div class="overlay-content">
+            <!-- Polaroid card will be here -->
+        </div>
+    </div>
+
+    <script>
+        async function loadAlumni() {
+            const res = await fetch('/api/alumni');
+            let alumni = [];
+            if (res.ok) {
+                alumni = await res.json();
+            }
+            
+            if (alumni.length === 0) {
+                alumni = [
+                    { name: '王小明', photo: 'https://via.placeholder.com/200x200?text=WXM', wish: '前程似锦！' },
+                    { name: '李华', photo: 'https://via.placeholder.com/200x200?text=LH', wish: '江湖再见。' }
+                ];
+            }
+
+            const map = document.getElementById('star-map');
+            map.innerHTML = '';
+            
+            alumni.forEach((person, index) => {
+                const star = document.createElement('div');
+                star.className = 'alumni-star';
+                
+                let hash = 0;
+                for (let i = 0; i < person.name.length; i++) {
+                    hash = person.name.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const x = Math.abs(hash % 90) + 5;
+                const y = Math.abs((hash >> 8) % 80) + 10;
+                
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                
+                star.onclick = () => showCard(person);
+                map.appendChild(star);
+            });
+        }
+
+        async function addAlumni() {
+            const name = document.getElementById('alumni-name').value;
+            const photo = document.getElementById('alumni-photo').value;
+            const wish = document.getElementById('alumni-wish').value;
+            
+            if (!name || !photo || !wish) {
+                alert('请填写完整信息');
+                return;
+            }
+
+            const res = await fetch('/api/alumni', {
+                method: 'POST',
+                body: JSON.stringify({ name, photo, wish })
+            });
+
+            if (res.ok) {
+                alert('已加入星图');
+                loadAlumni();
+            } else {
+                alert('请先登录');
+            }
+        }
+
+        function showCard(person) {
+            const overlay = document.getElementById('preview-overlay');
+            const content = overlay.querySelector('.overlay-content');
+            content.innerHTML = `
+                <div class="polaroid">
+                    <img src="${person.photo}" alt="${person.name}">
+                    <div class="name">${person.name}</div>
+                    <div class="wish">${person.wish}</div>
+                </div>
+            `;
+            overlay.style.display = 'flex';
+        }
+
+        document.getElementById('preview-overlay').onclick = function() {
+            this.style.display = 'none';
+        };
+
+        loadAlumni();
+        
+        fetch('/api/me').then(res => {
+            if (res.ok) {
+                res.json().then(user => {
+                    if (user.role === 'admin' || user.role === 'head') {
+                        document.getElementById('admin-link').classList.remove('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -7,43 +7,40 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>⚙️ 管理后台</h1>
-        <nav>
+    <div id="stars-container">
+        <div class="star-layer star-layer-1"></div>
+        <div class="star-layer star-layer-2"></div>
+        <div class="star-layer star-layer-3"></div>
+    </div>
+
+    <nav class="glass">
+        <div class="logo">✨ 星河后台</div>
+        <div class="links">
             <a href="index.html">首页</a>
             <a href="#" id="logout-link">注销</a>
-        </nav>
-    </header>
+        </div>
+    </nav>
+
     <main>
-        <section id="approval-section" class="card hidden">
-            <h2>待审核内容 (展览馆)</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>文件名</th>
-                        <th>上传者</th>
-                        <th>上传时间</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="pending-list"></tbody>
-            </table>
+        <section class="glass admin-section" id="info-section">
+            <h2>欢迎, <span id="current-user">加载中...</span></h2>
+            <p>角色: <span id="current-role">加载中...</span></p>
         </section>
 
-        <section id="account-section" class="card hidden">
-            <h2>账号管理</h2>
-            <form id="create-account-form" style="margin-bottom: 2rem;">
-                <input type="text" id="new-username" placeholder="用户名" required>
-                <input type="text" id="new-password" placeholder="初始密码" required>
-                <select id="new-role">
-                    <option value="user">用户 (User)</option>
-                    <option value="admin">管理员 (Admin)</option>
-                    <option value="head">总管 (Head)</option>
+        <!-- Head Only: Account Management -->
+        <section class="glass admin-section hidden" id="head-section">
+            <h2>账号管理 (总管)</h2>
+            <div style="margin-bottom: 1rem;">
+                <input type="text" id="new-username" placeholder="用户名" class="glass">
+                <input type="password" id="new-password" placeholder="密码" class="glass">
+                <select id="new-role" class="glass">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
                 </select>
-                <button type="submit">创建账号</button>
-            </form>
-            <button onclick="location.href='print-tickets.html'" style="margin-bottom: 1rem;">打印账号凭据</button>
-            <table>
+                <button class="btn btn-primary" onclick="addAccount()">添加账号</button>
+                <a href="print-tickets.html" class="btn btn-success" style="text-decoration:none;">打印凭据</a>
+            </div>
+            <table id="accounts-table">
                 <thead>
                     <tr>
                         <th>用户名</th>
@@ -52,8 +49,25 @@
                         <th>操作</th>
                     </tr>
                 </thead>
-                <tbody id="account-list"></tbody>
+                <tbody id="accounts-body"></tbody>
             </table>
+        </section>
+
+        <!-- Admin/Head: Content Approval -->
+        <section class="glass admin-section hidden" id="admin-section">
+            <h2>内容审批</h2>
+            <div id="pending-list" class="grid">
+                <!-- Pending items -->
+            </div>
+        </section>
+
+        <!-- All Users: Change Password -->
+        <section class="glass admin-section">
+            <h2>修改密码</h2>
+            <div>
+                <input type="password" id="change-new-password" placeholder="新密码" class="glass">
+                <button class="btn btn-primary" onclick="changePassword()">提交修改</button>
+            </div>
         </section>
     </main>
 
@@ -67,119 +81,136 @@
                 return;
             }
             currentUser = await res.json();
-            
-            if (currentUser.role === 'admin' || currentUser.role === 'head') {
-                document.getElementById('approval-section').classList.remove('hidden');
-                loadPending();
-            }
+            document.getElementById('current-user').textContent = currentUser.username;
+            document.getElementById('current-role').textContent = currentUser.role;
 
             if (currentUser.role === 'head') {
-                document.getElementById('account-section').classList.remove('hidden');
+                document.getElementById('head-section').classList.remove('hidden');
                 loadAccounts();
             }
-        }
-
-        async function loadPending() {
-            const res = await fetch('/api/pending');
-            if (res.ok) {
-                const list = await res.json();
-                const tbody = document.getElementById('pending-list');
-                tbody.innerHTML = '';
-                list.forEach(obj => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><a href="/${obj.key}" target="_blank">${obj.key.split('/').pop()}</a></td>
-                        <td>${obj.customMetadata?.uploader || '未知'}</td>
-                        <td>${new Date(parseInt(obj.customMetadata?.uploadedAt || 0)).toLocaleString()}</td>
-                        <td>
-                            <button onclick="approve('${obj.key}')">通过</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-        }
-
-        async function approve(key) {
-            const filename = key.split('/').pop();
-            const res = await fetch('/api/approve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename })
-            });
-            if (res.ok) {
-                alert('审核通过');
+            if (currentUser.role === 'head' || currentUser.role === 'admin') {
+                document.getElementById('admin-section').classList.remove('hidden');
                 loadPending();
-            } else {
-                const msg = await res.text();
-                alert('审核失败: ' + msg);
             }
         }
 
+        // Account Management
         async function loadAccounts() {
             const res = await fetch('/api/accounts');
-            if (res.ok) {
-                const accounts = await res.json();
-                const tbody = document.getElementById('account-list');
-                tbody.innerHTML = '';
-                accounts.forEach(acc => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${acc.username}</td>
-                        <td>${acc.role}</td>
-                        <td>${new Date(acc.createdAt).toLocaleString()}</td>
-                        <td>
-                            ${acc.username !== currentUser.username ? `<button onclick="deleteAccount('${acc.username}')" style="background-color: var(--error-color)">删除</button>` : ''}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
+            const accounts = await res.json();
+            const tbody = document.getElementById('accounts-body');
+            tbody.innerHTML = '';
+            accounts.forEach(acc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${acc.username}</td>
+                    <td>${acc.role}</td>
+                    <td>${new Date(acc.createdAt).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteAccount('${acc.username}')">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        document.getElementById('create-account-form').onsubmit = async (e) => {
-            e.preventDefault();
+        async function addAccount() {
             const username = document.getElementById('new-username').value;
             const password = document.getElementById('new-password').value;
             const role = document.getElementById('new-role').value;
-            
             const res = await fetch('/api/accounts', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password, role })
             });
             if (res.ok) {
-                // Save for printing (local storage is simple)
-                const tickets = JSON.parse(localStorage.getItem('new_tickets') || '[]');
-                tickets.push({ username, password });
-                localStorage.setItem('new_tickets', JSON.stringify(tickets));
-
-                alert('账号创建成功');
+                alert('添加成功');
                 loadAccounts();
-                e.target.reset();
             } else {
-                alert('创建失败');
+                const err = await res.json();
+                alert('错误: ' + err.error);
             }
-        };
+        }
 
         async function deleteAccount(username) {
-            if (!confirm(`确定要删除账号 ${username} 吗？`)) return;
+            if (!confirm('确定删除?')) return;
             const res = await fetch('/api/accounts', {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username })
             });
+            if (res.ok) loadAccounts();
+        }
+
+        // Content Approval
+        async function loadPending() {
+            const res = await fetch('/api/content?type=pending');
+            const items = await res.json();
+            const container = document.getElementById('pending-list');
+            container.innerHTML = '';
+            
+            if (items.length === 0) {
+                container.innerHTML = '<p>暂无待审批内容</p>';
+                return;
+            }
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card glass';
+                
+                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name);
+                const media = isImage ? `<img src="${item.url}">` : `<video src="${item.url}" controls>`;
+                
+                card.innerHTML = `
+                    ${media}
+                    <p>上传者: ${item.uploader}</p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-success" onclick="approveContent('${item.name}')">通过</button>
+                        <button class="btn btn-danger" onclick="rejectContent('${item.name}')">驳回</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function approveContent(name) {
+            const res = await fetch('/api/content', {
+                method: 'POST',
+                body: JSON.stringify({ name, action: 'approve' })
+            });
             if (res.ok) {
-                loadAccounts();
+                alert('已通过');
+                loadPending();
             } else {
-                alert('删除失败');
+                const err = await res.json();
+                alert('错误: ' + err.error);
+            }
+        }
+
+        async function rejectContent(name) {
+            const res = await fetch('/api/content', {
+                method: 'DELETE',
+                body: JSON.stringify({ name, type: 'pending' })
+            });
+            if (res.ok) loadPending();
+        }
+
+        // Password
+        async function changePassword() {
+            const newPassword = document.getElementById('change-new-password').value;
+            const res = await fetch('/api/password', {
+                method: 'POST',
+                body: JSON.stringify({ newPassword })
+            });
+            if (res.ok) alert('修改成功');
+            else {
+                const err = await res.json();
+                alert('错误: ' + err.error);
             }
         }
 
         document.getElementById('logout-link').onclick = async (e) => {
             e.preventDefault();
             await fetch('/api/logout');
-            location.href = 'index.html';
+            location.href = 'login.html';
         };
 
         init();

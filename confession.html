@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表白墙 - 星河记忆</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .lantern-text {
+            color: #5d4037;
+            font-size: 12px;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        .detail-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            color: #333;
+            max-width: 400px;
+            box-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="stars-container">
+        <div class="star-layer star-layer-1"></div>
+        <div class="star-layer star-layer-2"></div>
+        <div class="star-layer star-layer-3"></div>
+    </div>
+
+    <nav class="glass">
+        <div class="logo">✨ 星河记忆</div>
+        <div class="links">
+            <a href="index.html">首页</a>
+            <a href="alumni.html">同学录</a>
+            <a href="confession.html">表白墙</a>
+            <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
+        </div>
+    </nav>
+
+    <main>
+        <h1 style="text-align: center;">孔明灯寄语</h1>
+        <p style="text-align: center;">让思念随风，升入星河</p>
+        
+        <div id="lantern-field" class="lantern-container glass">
+            <!-- Lanterns will float here -->
+        </div>
+
+        <section class="glass" style="margin-top: 2rem; padding: 2rem;">
+            <h2>放飞孔明灯</h2>
+            <div class="grid" style="grid-template-columns: 1fr;">
+                <textarea id="confession-text" placeholder="写下你的寄语..." class="glass" style="width: 100%; height: 100px; color: white; padding: 10px;"></textarea>
+                <button class="btn btn-primary" onclick="addConfession()">放飞</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="preview-overlay" class="overlay">
+        <div class="overlay-content"></div>
+    </div>
+
+    <script>
+        async function loadConfessions() {
+            const res = await fetch('/api/confessions');
+            let messagesList = [];
+            if (res.ok) {
+                messagesList = await res.json();
+            }
+            
+            if (messagesList.length === 0) {
+                messagesList = [{text: "祝大家前程似锦"}, {text: "江湖再见"}, {text: "永远少年！"}];
+            }
+            
+            messagesList.forEach(m => createLantern(m.text));
+        }
+
+        async function addConfession() {
+            const text = document.getElementById('confession-text').value;
+            if (!text) return;
+
+            const res = await fetch('/api/confessions', {
+                method: 'POST',
+                body: JSON.stringify({ text })
+            });
+
+            if (res.ok) {
+                document.getElementById('confession-text').value = '';
+                createLantern(text);
+            } else {
+                alert('请先登录');
+            }
+        }
+
+        function createLantern(text) {
+            const container = document.getElementById('lantern-field');
+            const lantern = document.createElement('div');
+            lantern.className = 'lantern';
+            lantern.innerHTML = `<div class="lantern-text">${text}</div>`;
+            
+            const startX = Math.random() * 90;
+            lantern.style.left = `${startX}%`;
+            
+            const duration = 15 + Math.random() * 10;
+            lantern.style.animationDuration = `${duration}s, 3s`;
+            lantern.style.animationDelay = `${Math.random() * 5}s`;
+            
+            lantern.onclick = () => {
+                const overlay = document.getElementById('preview-overlay');
+                overlay.querySelector('.overlay-content').innerHTML = `
+                    <div class="detail-card">
+                        <h3>寄语详情</h3>
+                        <p>${text}</p>
+                    </div>
+                `;
+                overlay.style.display = 'flex';
+            };
+            
+            container.appendChild(lantern);
+            
+            setTimeout(() => {
+                lantern.remove();
+                // Randomly spawn another one to keep it alive
+                fetch('/api/confessions').then(r => r.json()).then(msgs => {
+                    if (msgs.length > 0) {
+                        createLantern(msgs[Math.floor(Math.random() * msgs.length)].text);
+                    }
+                });
+            }, duration * 1000);
+        }
+
+        loadConfessions();
+
+        document.getElementById('preview-overlay').onclick = function() {
+            this.style.display = 'none';
+        };
+
+        fetch('/api/me').then(res => {
+            if (res.ok) {
+                res.json().then(user => {
+                    if (user.role === 'admin' || user.role === 'head') {
+                        document.getElementById('admin-link').classList.remove('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

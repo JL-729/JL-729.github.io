@@ -7,19 +7,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="login-container" class="card">
-        <h2>登录</h2>
-        <form id="login-form">
-            <div style="display: flex; flex-direction: column;">
-                <label>用户名</label>
-                <input type="text" id="username" required>
-                <label>密码</label>
-                <input type="password" id="password" required>
-                <button type="submit">登录</button>
-            </div>
-            <p id="error" class="error-color hidden"></p>
-        </form>
-        <p><a href="index.html" style="color: var(--secondary-color);">返回首页</a></p>
+    <div id="stars-container">
+        <div class="star-layer star-layer-1"></div>
+        <div class="star-layer star-layer-2"></div>
+        <div class="star-layer star-layer-3"></div>
+    </div>
+
+    <div style="display: flex; height: 100vh; align-items: center; justify-content: center;">
+        <div class="glass card glow-border" style="width: 100%; max-width: 400px; padding: 2rem;">
+            <h1 style="text-align: center; margin-bottom: 2rem;">登入星河</h1>
+            <form id="login-form">
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="username" placeholder="用户名" class="glass" style="width: 100%; box-sizing: border-box;" required>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <input type="password" id="password" placeholder="密码" class="glass" style="width: 100%; box-sizing: border-box;" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">开启记忆之门</button>
+            </form>
+            <div id="error-msg" style="color: #ff4d4d; text-align: center; margin-top: 1rem;"></div>
+        </div>
     </div>
 
     <script>
@@ -27,20 +34,22 @@
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorEl = document.getElementById('error');
+            const errorMsg = document.getElementById('error-msg');
 
             const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
 
             if (res.ok) {
-                location.href = 'index.html';
-            } else {
                 const data = await res.json();
-                errorEl.textContent = data.error || '登录失败';
-                errorEl.classList.remove('hidden');
+                if (data.role === 'head' || data.role === 'admin') {
+                    location.href = 'admin.html';
+                } else {
+                    location.href = 'index.html';
+                }
+            } else {
+                errorMsg.textContent = '用户名或密码错误';
             }
         };
     </script>
