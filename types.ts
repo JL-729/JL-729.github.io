@@ -11,3 +11,4 @@ export interface User {
   role: 'head' | 'admin' | 'user';
   createdAt: number;
 }
+// Final check
