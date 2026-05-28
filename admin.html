@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理后台 - 星河记忆</title>
     <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/galaxy.js"></script>
 </head>
 <body>
-    <div id="stars-container">
-        <div class="star-layer star-layer-1"></div>
-        <div class="star-layer star-layer-2"></div>
-        <div class="star-layer star-layer-3"></div>
-    </div>
+    <canvas id="galaxy-canvas"></canvas>
 
     <nav class="glass">
         <div class="logo">✨ 星河后台</div>
@@ -29,16 +29,16 @@
 
         <!-- Head Only: Account Management -->
         <section class="glass admin-section hidden" id="head-section">
-            <h2>账号管理 (总管)</h2>
-            <div style="margin-bottom: 1rem;">
-                <input type="text" id="new-username" placeholder="用户名" class="glass">
-                <input type="password" id="new-password" placeholder="密码" class="glass">
-                <select id="new-role" class="glass">
+            <h2>👑 账号管理 (总管)</h2>
+            <div style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <input type="text" id="new-username" placeholder="用户名" class="glass" style="flex:1;min-width:120px;">
+                <input type="password" id="new-password" placeholder="密码" class="glass" style="flex:1;min-width:120px;">
+                <select id="new-role" class="glass" style="flex:0 1 auto;">
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                 </select>
                 <button class="btn btn-primary" onclick="addAccount()">添加账号</button>
-                <a href="print-tickets.html" class="btn btn-success" style="text-decoration:none;">打印凭据</a>
+                <a href="print-tickets.html" class="btn btn-success" style="text-decoration:none;">🖨️ 打印凭据</a>
             </div>
             <table id="accounts-table">
                 <thead>
@@ -55,7 +55,7 @@
 
         <!-- Admin/Head: Content Approval -->
         <section class="glass admin-section hidden" id="admin-section">
-            <h2>内容审批</h2>
+            <h2>📋 内容审批</h2>
             <div id="pending-list" class="grid">
                 <!-- Pending items -->
             </div>
@@ -63,26 +63,29 @@
 
         <!-- All Users: Change Password -->
         <section class="glass admin-section">
-            <h2>修改密码</h2>
-            <div>
-                <input type="password" id="change-new-password" placeholder="新密码" class="glass">
+            <h2>🔑 修改密码</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <input type="password" id="change-new-password" placeholder="新密码" class="glass" style="flex:1;min-width:200px;">
                 <button class="btn btn-primary" onclick="changePassword()">提交修改</button>
             </div>
+            <div id="password-msg" style="margin-top: 10px;"></div>
         </section>
     </main>
 
     <script>
         let currentUser = null;
 
-        async function init() {
-            const res = await fetch('/api/me');
-            if (!res.ok) {
+        function init() {
+            currentUser = Auth.getUser();
+            if (!currentUser) {
                 location.href = 'login.html';
                 return;
             }
-            currentUser = await res.json();
+
             document.getElementById('current-user').textContent = currentUser.username;
-            document.getElementById('current-role').textContent = currentUser.role;
+            document.getElementById('current-role').textContent = 
+                currentUser.role === 'head' ? '👑 总管' : 
+                currentUser.role === 'admin' ? '🛡️ 管理员' : '👤 用户';
 
             if (currentUser.role === 'head') {
                 document.getElementById('head-section').classList.remove('hidden');
@@ -96,123 +99,317 @@
 
         // Account Management
         async function loadAccounts() {
-            const res = await fetch('/api/accounts');
-            const accounts = await res.json();
-            const tbody = document.getElementById('accounts-body');
-            tbody.innerHTML = '';
-            accounts.forEach(acc => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${acc.username}</td>
-                    <td>${acc.role}</td>
-                    <td>${new Date(acc.createdAt).toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="deleteAccount('${acc.username}')">删除</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+            try {
+                const accounts = await Storage.readJSON('/db/users.json');
+                const tbody = document.getElementById('accounts-body');
+                tbody.innerHTML = '';
+                if (!accounts || !Array.isArray(accounts)) {
+                    tbody.innerHTML = '<tr><td colspan="4">暂无账号数据</td></tr>';
+                    return;
+                }
+                accounts.forEach(acc => {
+                    const tr = document.createElement('tr');
+                    const roleLabel = acc.role === 'head' ? '👑 总管' : acc.role === 'admin' ? '🛡️ Admin' : '👤 User';
+                    tr.innerHTML = `
+                        <td>${acc.username}</td>
+                        <td>${roleLabel}</td>
+                        <td>${acc.createdAt ? new Date(acc.createdAt).toLocaleString() : '未知'}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteAccount('${acc.username}')">删除</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.warn('[Admin] 加载账号失败:', e);
+                document.getElementById('accounts-body').innerHTML = '<tr><td colspan="4">加载失败</td></tr>';
+            }
+        }
+
+        // Simple hash matching for password validation
+        function hashPassword(password) {
+            let hash = 0;
+            const str = `${password}`;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return `sha256-fake-${Math.abs(hash).toString(16)}`;
         }
 
         async function addAccount() {
-            const username = document.getElementById('new-username').value;
+            const username = document.getElementById('new-username').value.trim();
             const password = document.getElementById('new-password').value;
             const role = document.getElementById('new-role').value;
-            const res = await fetch('/api/accounts', {
-                method: 'POST',
-                body: JSON.stringify({ username, password, role })
-            });
-            if (res.ok) {
-                alert('添加成功');
+
+            if (!username || !password) {
+                alert('请填写用户名和密码');
+                return;
+            }
+
+            try {
+                let accounts = await Storage.readJSON('/db/users.json') || [];
+                if (!Array.isArray(accounts)) accounts = [];
+
+                if (accounts.find(u => u.username === username)) {
+                    alert('错误: 账号已存在');
+                    return;
+                }
+
+                accounts.push({
+                    username,
+                    passwordHash: hashPassword(password),
+                    role,
+                    createdAt: Date.now()
+                });
+
+                await Storage.writeJSON('/db/users.json', accounts);
+                alert('✅ 添加成功');
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
                 loadAccounts();
-            } else {
-                const err = await res.json();
-                alert('错误: ' + err.error);
+            } catch (e) {
+                console.error('[Admin] 添加账号失败:', e);
+                alert('错误: ' + e.message);
             }
         }
 
         async function deleteAccount(username) {
-            if (!confirm('确定删除?')) return;
-            const res = await fetch('/api/accounts', {
-                method: 'DELETE',
-                body: JSON.stringify({ username })
-            });
-            if (res.ok) loadAccounts();
+            if (!confirm(`确定删除账号 "${username}"？`)) return;
+
+            try {
+                let accounts = await Storage.readJSON('/db/users.json') || [];
+                if (!Array.isArray(accounts)) accounts = [];
+                accounts = accounts.filter(u => u.username !== username);
+                await Storage.writeJSON('/db/users.json', accounts);
+                loadAccounts();
+            } catch (e) {
+                console.error('[Admin] 删除账号失败:', e);
+                alert('删除失败');
+            }
         }
 
         // Content Approval
         async function loadPending() {
-            const res = await fetch('/api/content?type=pending');
-            const items = await res.json();
             const container = document.getElementById('pending-list');
-            container.innerHTML = '';
             
-            if (items.length === 0) {
-                container.innerHTML = '<p>暂无待审批内容</p>';
-                return;
-            }
+            try {
+                const files = await Storage.list('/exhibition/pending');
+                
+                if (!files || files.length === 0) {
+                    container.innerHTML = '<p style="grid-column:1/-1;text-align:center;">✅ 暂无待审批内容</p>';
+                    return;
+                }
 
-            items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card glass';
-                
-                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(item.name);
-                const media = isImage ? `<img src="${item.url}">` : `<video src="${item.url}" controls>`;
-                
-                card.innerHTML = `
-                    ${media}
-                    <p>上传者: ${item.uploader}</p>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn btn-success" onclick="approveContent('${item.name}')">通过</button>
-                        <button class="btn btn-danger" onclick="rejectContent('${item.name}')">驳回</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+                container.innerHTML = '';
+
+                for (const filePath of files) {
+                    const name = filePath.split('/').pop();
+                    if (!name) continue;
+
+                    const card = document.createElement('div');
+                    card.className = 'card glass';
+                    
+                    const baseUrl = (() => {
+                        if (!GALAXY_WEBDAV_URL) return '';
+                        const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
+                        try {
+                            const parsed = new URL(url);
+                            return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+                        } catch {
+                            return url;
+                        }
+                    })();
+                    const fileUrl = `${baseUrl}/exhibition/pending/${name}`;
+                    
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
+                    const media = isImage ? `<img src="${fileUrl}" style="max-height:200px;object-fit:cover;">` : `<video src="${fileUrl}" controls style="max-height:200px;"></video>`;
+                    
+                    card.innerHTML = `
+                        ${media}
+                        <p style="margin-top:8px;font-size:0.85rem;opacity:0.7;">📄 ${name}</p>
+                        <div style="display:flex; gap:10px; margin-top:8px;">
+                            <button class="btn btn-success" onclick="approveContent('${name}')">✅ 通过</button>
+                            <button class="btn btn-danger" onclick="rejectContent('${name}')">❌ 驳回</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            } catch (e) {
+                console.warn('[Admin] 加载待审批内容失败:', e);
+                container.innerHTML = '<p style="grid-column:1/-1;text-align:center;">📭 暂无待审批内容</p>';
+            }
         }
 
         async function approveContent(name) {
-            const res = await fetch('/api/content', {
-                method: 'POST',
-                body: JSON.stringify({ name, action: 'approve' })
-            });
-            if (res.ok) {
-                alert('已通过');
+            try {
+                // Move file from pending to approved via WebDAV
+                const auth = (() => {
+                    if (!GALAXY_WEBDAV_URL) return null;
+                    const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
+                    if (match) return btoa(`${match[1]}:${match[2]}`);
+                    return null;
+                })();
+                
+                const baseUrl = (() => {
+                    if (!GALAXY_WEBDAV_URL) return '';
+                    const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
+                    try {
+                        const parsed = new URL(url);
+                        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+                    } catch {
+                        return url;
+                    }
+                })();
+
+                if (!auth || !baseUrl) {
+                    alert('WebDAV 未配置');
+                    return;
+                }
+
+                // Read file from pending, write to approved, delete from pending
+                const readRes = await fetch(`${baseUrl}/exhibition/pending/${name}`, {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+                
+                if (!readRes.ok) {
+                    alert('读取文件失败');
+                    return;
+                }
+
+                const blob = await readRes.blob();
+
+                const putRes = await fetch(`${baseUrl}/exhibition/approved/${name}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Basic ${auth}`,
+                        'Content-Type': blob.type || 'application/octet-stream'
+                    },
+                    body: blob
+                });
+
+                if (!putRes.ok) {
+                    alert('批准失败');
+                    return;
+                }
+
+                // Delete from pending
+                await fetch(`${baseUrl}/exhibition/pending/${name}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                // Update metadata
+                try {
+                    let metadata = await Storage.readJSON('/db/metadata.json') || {};
+                    if (metadata[name]) {
+                        metadata[name].approvedBy = currentUser.username;
+                        metadata[name].approvedAt = Date.now();
+                    } else {
+                        metadata[name] = {
+                            approvedBy: currentUser.username,
+                            approvedAt: Date.now(),
+                            uploader: 'unknown'
+                        };
+                    }
+                    await Storage.writeJSON('/db/metadata.json', metadata);
+                } catch (e) {
+                    // Metadata is optional
+                }
+
+                alert('✅ 已通过');
                 loadPending();
-            } else {
-                const err = await res.json();
-                alert('错误: ' + err.error);
+            } catch (e) {
+                console.error('[Admin] 审批失败:', e);
+                alert('错误: ' + e.message);
             }
         }
 
         async function rejectContent(name) {
-            const res = await fetch('/api/content', {
-                method: 'DELETE',
-                body: JSON.stringify({ name, type: 'pending' })
-            });
-            if (res.ok) loadPending();
+            if (!confirm(`确定驳回 "${name}"？`)) return;
+
+            try {
+                const baseUrl = (() => {
+                    if (!GALAXY_WEBDAV_URL) return '';
+                    const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
+                    try {
+                        const parsed = new URL(url);
+                        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+                    } catch {
+                        return url;
+                    }
+                })();
+
+                const auth = (() => {
+                    if (!GALAXY_WEBDAV_URL) return null;
+                    const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
+                    if (match) return btoa(`${match[1]}:${match[2]}`);
+                    return null;
+                })();
+
+                if (auth && baseUrl) {
+                    await fetch(`${baseUrl}/exhibition/pending/${name}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Basic ${auth}` }
+                    });
+                }
+
+                loadPending();
+            } catch (e) {
+                console.error('[Admin] 驳回失败:', e);
+                alert('错误: ' + e.message);
+            }
         }
 
         // Password
         async function changePassword() {
             const newPassword = document.getElementById('change-new-password').value;
-            const res = await fetch('/api/password', {
-                method: 'POST',
-                body: JSON.stringify({ newPassword })
-            });
-            if (res.ok) alert('修改成功');
-            else {
-                const err = await res.json();
-                alert('错误: ' + err.error);
+            const msg = document.getElementById('password-msg');
+            
+            if (!newPassword) {
+                msg.textContent = '请输入新密码';
+                msg.style.color = '#ff4d4d';
+                return;
+            }
+
+            if (currentUser && currentUser.username === 'admin729') {
+                msg.textContent = '⚠️ 硬编码管理员密码无法在此修改';
+                msg.style.color = '#ff4d4d';
+                return;
+            }
+
+            try {
+                let accounts = await Storage.readJSON('/db/users.json') || [];
+                if (!Array.isArray(accounts)) accounts = [];
+                
+                const idx = accounts.findIndex(u => u.username === currentUser.username);
+                if (idx === -1) {
+                    msg.textContent = '用户未找到';
+                    msg.style.color = '#ff4d4d';
+                    return;
+                }
+
+                accounts[idx].passwordHash = hashPassword(newPassword);
+                await Storage.writeJSON('/db/users.json', accounts);
+                
+                msg.textContent = '✅ 密码修改成功';
+                msg.style.color = '#3ae374';
+                document.getElementById('change-new-password').value = '';
+            } catch (e) {
+                console.error('[Admin] 修改密码失败:', e);
+                msg.textContent = '错误: ' + e.message;
+                msg.style.color = '#ff4d4d';
             }
         }
 
-        document.getElementById('logout-link').onclick = async (e) => {
+        document.getElementById('logout-link').onclick = (e) => {
             e.preventDefault();
-            await fetch('/api/logout');
+            Auth.logout();
             location.href = 'login.html';
         };
 
+        Galaxy.init();
         init();
     </script>
 </body>

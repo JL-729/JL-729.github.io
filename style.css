@@ -1,9 +1,8 @@
 :root {
     --primary-color: #7d5fff;
     --secondary-color: #3ae374;
-    --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
     --text-color: #ffffff;
     --glow-color: rgba(125, 95, 255, 0.5);
 }
@@ -12,66 +11,31 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg-gradient);
+    background: #000000;
     color: var(--text-color);
     min-height: 100vh;
     overflow-x: hidden;
 }
 
-/* Star Background */
-#stars-container {
+/* Galaxy Canvas Background */
+#galaxy-canvas {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: -1;
-    overflow: hidden;
-}
-
-.star-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent;
-}
-
-.star-layer-1 {
-    box-shadow: 457px 154px #FFF, 1500px 321px #FFF, 1234px 987px #FFF, 234px 567px #FFF, 800px 100px #FFF, 400px 600px #FFF, 1200px 400px #FFF, 100px 900px #FFF, 500px 200px #FFF, 1400px 800px #FFF;
-    width: 1px;
-    height: 1px;
-    animation: moveStars 100s linear infinite;
-}
-
-.star-layer-2 {
-    box-shadow: 234px 567px #FFF, 800px 100px #FFF, 400px 600px #FFF, 1200px 400px #FFF, 100px 900px #FFF, 457px 154px #FFF, 1500px 321px #FFF, 1234px 987px #FFF;
-    width: 2px;
-    height: 2px;
-    animation: moveStars 150s linear infinite;
-}
-
-.star-layer-3 {
-    box-shadow: 100px 900px #FFF, 500px 200px #FFF, 1400px 800px #FFF, 234px 567px #FFF, 800px 100px #FFF, 400px 600px #FFF;
-    width: 3px;
-    height: 3px;
-    animation: moveStars 200s linear infinite;
-}
-
-@keyframes moveStars {
-    from { transform: translateY(0); }
-    to { transform: translateY(-2000px); }
+    pointer-events: none;
 }
 
 /* Glassmorphism */
 .glass {
     background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
     border-radius: 15px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 .glow-border:hover {
@@ -181,28 +145,83 @@ main {
     position: absolute;
     bottom: -100px;
     width: 60px;
-    height: 80px;
-    background: rgba(255, 200, 50, 0.6);
+    min-height: 80px;
+    background: radial-gradient(circle at 50% 80%, #ffeb3b, #ff9800, #ff5722);
     border-radius: 20px 20px 5px 5px;
-    box-shadow: 0 0 30px rgba(255, 150, 0, 0.5);
-    animation: rise 15s linear infinite, sway 3s ease-in-out infinite alternate;
+    box-shadow: 0 0 30px rgba(255, 150, 0, 0.6), 0 0 60px rgba(255, 100, 0, 0.3);
+    animation: rise 18s linear infinite;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
-    color: #333;
+    padding: 12px 8px;
+    color: #5d4037;
     font-size: 10px;
     text-align: center;
+    box-sizing: border-box;
+    will-change: transform, bottom;
+}
+
+.lantern::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 8px;
+    background: #8d6e63;
+    border-radius: 3px 3px 0 0;
+}
+
+.lantern::after {
+    content: '';
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 8px;
+    background: #5d4037;
 }
 
 @keyframes rise {
-    to { bottom: 110%; }
+    0% {
+        bottom: -120px;
+        opacity: 0;
+    }
+    5% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        bottom: 110%;
+        opacity: 0;
+    }
 }
 
-@keyframes sway {
-    from { transform: translateX(-20px); }
-    to { transform: translateX(20px); }
+/* Confession Textarea */
+#confession-text {
+    width: 100%;
+    height: 250px !important;
+    color: white;
+    padding: 15px;
+    box-sizing: border-box;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    font-family: inherit;
+}
+
+#confession-text:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--glow-color);
 }
 
 /* Admin Styles */
@@ -235,6 +254,11 @@ th, td {
 .btn-danger { background: #ff4d4d; color: white; }
 .btn-success { background: var(--secondary-color); color: white; }
 
+.btn:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
 /* Modal / Preview */
 .overlay {
     position: fixed;
@@ -242,11 +266,12 @@ th, td {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(5px);
 }
 
 .overlay-content {
@@ -256,10 +281,32 @@ th, td {
 
 .hidden { display: none !important; }
 
+/* Inputs */
+input.glass, textarea.glass, select.glass {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 10px 15px;
+    color: white;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+input.glass:focus, textarea.glass:focus, select.glass:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+select.glass option {
+    background: #1a1a2e;
+    color: white;
+}
+
 /* Print */
 @media print {
     body { background: white; color: black; }
-    #stars-container, nav, .no-print { display: none; }
+    #galaxy-canvas, nav, .no-print { display: none; }
     .ticket {
         border: 1px dashed #ccc;
         padding: 20px;
