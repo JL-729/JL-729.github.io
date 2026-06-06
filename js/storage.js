@@ -91,13 +91,45 @@ const Storage = (() => {
             return request('DELETE', path);
         },
 
+        async mkdir(path) {
+            // Create directory via WebDAV MKCOL
+            const auth = getAuth();
+            const baseUrl = getBaseUrl();
+            if (!auth || !baseUrl) {
+                throw new Error('WebDAV 未配置');
+            }
+            const fullUrl = `${baseUrl}${path}`.replace(/\/+$/, '');
+            const res = await fetch(fullUrl, {
+                method: 'MKCOL',
+                headers: { 'Authorization': `Basic ${auth}` }
+            });
+            if (res.status === 405 || res.status === 301 || res.status === 302) {
+                // Directory already exists
+                return true;
+            }
+            if (!res.ok && res.status !== 201 && res.status !== 200) {
+                console.warn(`[Storage] MKCOL ${path} failed: ${res.status} ${res.statusText}`);
+                return null;
+            }
+            return res;
+        },
+
         async list(path) {
             const res = await request('PROPFIND', path ? `${path}/` : '/', null);
             if (!res) return [];
             const text = await res.text();
             const hrefs = [...text.matchAll(/<d:href>([^<]+)<\/d:href>/g)].map(m => m[1]);
             const normalizedPath = path ? `${path}/` : '/';
-            return hrefs.filter(h => h !== normalizedPath && h !== `/${normalizedPath}`);
+            return hrefs.filter(h => {
+                const clean = decodeURIComponent(h).replace(/\/+$/, '');
+                const normalized = decodeURIComponent(normalizedPath).replace(/\/+$/, '');
+                return clean !== normalized && clean !== `/${normalized}`;
+            });
+        },
+
+        async exists(path) {
+            const res = await request('GET', path);
+            return res !== null;
         },
 
         async readJSON(path) {

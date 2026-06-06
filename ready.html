@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初始化 - 星河记忆</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/galaxy.js"></script>
+    <style>
+        .setup-container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 2rem;
+        }
+        .setup-container h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .setup-container .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: 0.3s;
+        }
+        .step-dot.active {
+            background: var(--primary-color);
+            box-shadow: 0 0 10px var(--glow-color);
+        }
+        .step-dot.done {
+            background: var(--secondary-color);
+        }
+        .log-area {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-top: 1rem;
+            display: none;
+        }
+        .log-area .log-success { color: var(--secondary-color); }
+        .log-area .log-error { color: #ff4d4d; }
+        .log-area .log-info { color: #7d5fff; }
+        .status-msg {
+            text-align: center;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+        }
+        .status-msg.success {
+            background: rgba(58, 227, 116, 0.1);
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        .status-msg.error {
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid #ff4d4d;
+            color: #ff4d4d;
+        }
+        .hidden { display: none !important; }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .test-result {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="galaxy-canvas"></canvas>
+
+    <main>
+        <div class="setup-container glass">
+            <h1>🌌 星河初始化</h1>
+            <p class="subtitle">首次使用前，请完成系统初始化配置</p>
+
+            <div class="step-indicator">
+                <div class="step-dot active" id="step1-dot"></div>
+                <div class="step-dot" id="step2-dot"></div>
+                <div class="step-dot" id="step3-dot"></div>
+            </div>
+
+            <!-- Step 1: WebDAV Configuration -->
+            <div id="step-1">
+                <h2>📡 第一步：配置 WebDAV 连接</h2>
+                <p style="opacity:0.7;font-size:0.9rem;margin-bottom:1.5rem;">
+                    请输入你的 WebDAV 服务器地址（含账号密码）
+                </p>
+                <div class="form-group">
+                    <label>WebDAV 地址</label>
+                    <input type="text" id="webdav-url" class="glass" 
+                           placeholder="https://用户名:密码@你的服务器.com/路径/"
+                           style="font-family:monospace;font-size:0.85rem;">
+                </div>
+                <button class="btn btn-primary" onclick="testConnection()">🔍 测试连接</button>
+                <div id="test-result" class="test-result"></div>
+            </div>
+
+            <!-- Step 2: Directory Setup -->
+            <div id="step-2" class="hidden">
+                <h2>📁 第二步：建立目录结构</h2>
+                <p style="opacity:0.7;font-size:0.9rem;margin-bottom:1.5rem;">
+                    自动创建系统所需的目录结构
+                </p>
+                <div id="dir-status"></div>
+                <button class="btn btn-primary" onclick="setupDirectories()" style="margin-top:1rem;">🚀 创建目录</button>
+            </div>
+
+            <!-- Step 3: Write Initial Data -->
+            <div id="step-3" class="hidden">
+                <h2>💾 第三步：写入初始数据</h2>
+                <p style="opacity:0.7;font-size:0.9rem;margin-bottom:1.5rem;">
+                    创建系统初始配置文件
+                </p>
+                <div id="init-status"></div>
+                <button class="btn btn-primary" onclick="writeInitialData()" style="margin-top:1rem;">✨ 完成初始化</button>
+            </div>
+
+            <div id="log-area" class="log-area"></div>
+            <div id="status-msg" class="hidden"></div>
+        </div>
+    </main>
+
+    <script>
+        let currentStep = 1;
+        let webdavValidated = false;
+
+        function updateSteps(step) {
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById(`step${i}-dot`);
+                document.getElementById(`step-${i}`).classList.toggle('hidden', i !== step);
+                dot.classList.toggle('active', i === step);
+                dot.classList.toggle('done', i < step);
+            }
+            currentStep = step;
+        }
+
+        function addLog(text, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            logArea.style.display = 'block';
+            const line = document.createElement('div');
+            line.className = `log-${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            logArea.appendChild(line);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function showStatus(text, type) {
+            const msg = document.getElementById('status-msg');
+            msg.className = `status-msg ${type}`;
+            msg.textContent = text;
+            msg.classList.remove('hidden');
+        }
+
+        function hideStatus() {
+            document.getElementById('status-msg').classList.add('hidden');
+        }
+
+        async function testConnection() {
+            const url = document.getElementById('webdav-url').value.trim();
+            const resultDiv = document.getElementById('test-result');
+            const btn = resultDiv.previousElementSibling;
+
+            if (!url) {
+                resultDiv.innerHTML = '<span style="color:#ff4d4d;">⚠️ 请输入 WebDAV 地址</span>';
+                return;
+            }
+
+            // Validate URL format
+            if (!url.startsWith('https://') && !url.startsWith('http://')) {
+                resultDiv.innerHTML = '<span style="color:#ff4d4d;">⚠️ URL 必须以 http:// 或 https:// 开头</span>';
+                return;
+            }
+
+            if (!url.includes('@')) {
+                resultDiv.innerHTML = '<span style="color:#ff4d4d;">⚠️ URL 必须包含用户名和密码 (格式: https://user:pass@host/path/)</span>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ 测试中...';
+            resultDiv.innerHTML = '';
+
+            // Save to localStorage temporarily for storage module
+            localStorage.setItem('galaxy_webdav_url', url);
+            // Reload config
+            GALAXY_WEBDAV_URL = url;
+
+            try {
+                addLog('正在测试 WebDAV 连接...', 'info');
+                const res = await Storage.list('/');
+                if (res !== null) {
+                    addLog('WebDAV 连接成功！', 'success');
+                    resultDiv.innerHTML = '<span style="color:var(--secondary-color);">✅ 连接成功！WebDAV 服务器响应正常</span>';
+                    webdavValidated = true;
+                    updateSteps(2);
+                } else {
+                    throw new Error('无法列出根目录');
+                }
+            } catch (e) {
+                addLog(`连接失败: ${e.message}`, 'error');
+                resultDiv.innerHTML = `<span style="color:#ff4d4d;">❌ 连接失败: ${e.message}</span>`;
+                webdavValidated = false;
+                localStorage.removeItem('galaxy_webdav_url');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🔍 测试连接';
+        }
+
+        async function setupDirectories() {
+            const statusDiv = document.getElementById('dir-status');
+            const btn = statusDiv.nextElementSibling;
+            btn.disabled = true;
+            btn.textContent = '⏳ 创建中...';
+            statusDiv.innerHTML = '';
+            hideStatus();
+
+            const directories = [
+                '/db',
+                '/alumni',
+                '/alumni/assets',
+                '/gallery',
+                '/exhibition',
+                '/exhibition/pending',
+                '/exhibition/approved',
+                '/cosmos'
+            ];
+
+            let success = 0;
+            let failed = 0;
+
+            for (const dir of directories) {
+                try {
+                    addLog(`创建目录 ${dir} ...`, 'info');
+                    const res = await Storage.mkdir(dir);
+                    if (res !== null) {
+                        addLog(`✅ ${dir} 创建成功`, 'success');
+                        success++;
+                    } else {
+                        addLog(`⚠️ ${dir} 可能已存在`, 'info');
+                        success++;
+                    }
+                } catch (e) {
+                    addLog(`❌ ${dir} 创建失败: ${e.message}`, 'error');
+                    failed++;
+                }
+            }
+
+            const totalMsg = `目录创建完成: ${success} 成功, ${failed} 失败`;
+            if (failed === 0) {
+                statusDiv.innerHTML = `<span style="color:var(--secondary-color);">✅ ${totalMsg}</span>`;
+                updateSteps(3);
+            } else {
+                statusDiv.innerHTML = `<span style="color:#ff4d4d;">⚠️ ${totalMsg}</span>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🚀 创建目录';
+        }
+
+        async function writeInitialData() {
+            const statusDiv = document.getElementById('init-status');
+            const btn = statusDiv.nextElementSibling;
+            btn.disabled = true;
+            btn.textContent = '⏳ 写入中...';
+            statusDiv.innerHTML = '';
+            hideStatus();
+
+            try {
+                // Write accounts.json with hardcoded admin
+                addLog('写入 accounts.json ...', 'info');
+                const accountsData = [
+                    {
+                        username: HARDCODED_ADMIN.username,
+                        passwordHash: (() => {
+                            let hash = 0;
+                            const str = HARDCODED_ADMIN.password;
+                            for (let i = 0; i < str.length; i++) {
+                                const char = str.charCodeAt(i);
+                                hash = ((hash << 5) - hash) + char;
+                                hash = hash & hash;
+                            }
+                            return `sha256-fake-${Math.abs(hash).toString(16)}`;
+                        })(),
+                        role: HARDCODED_ADMIN.role,
+                        createdAt: Date.now()
+                    }
+                ];
+                await Storage.writeJSON('/accounts.json', accountsData);
+                addLog('✅ accounts.json 写入成功', 'success');
+
+                // Write empty data files
+                addLog('写入初始数据文件...', 'info');
+                await Storage.writeJSON('/db/alumni.json', []);
+                addLog('✅ alumni.json 写入成功', 'success');
+                await Storage.writeJSON('/db/confessions.json', []);
+                addLog('✅ confessions.json 写入成功', 'success');
+                await Storage.writeJSON('/db/metadata.json', {});
+                addLog('✅ metadata.json 写入成功', 'success');
+                await Storage.writeJSON('/db/users.json', []);
+                addLog('✅ users.json 写入成功', 'success');
+
+                // Create a gallery data file
+                await Storage.writeJSON('/gallery/data.json', { posts: [] });
+                addLog('✅ gallery/data.json 写入成功', 'success');
+
+                addLog('🎉 系统初始化完成！', 'success');
+
+                statusDiv.innerHTML = '<span style="color:var(--secondary-color);">✅ 所有初始数据写入成功！</span>';
+
+                // Save the config permanently
+                addLog('正在保存配置...', 'info');
+                // URL already saved in localStorage from step 1
+
+                showStatus('🎉 初始化完成！即将跳转至首页...', 'success');
+
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+
+            } catch (e) {
+                addLog(`❌ 写入失败: ${e.message}`, 'error');
+                statusDiv.innerHTML = `<span style="color:#ff4d4d;">❌ 写入失败: ${e.message}</span>`;
+                showStatus('初始化失败，请重试', 'error');
+                btn.disabled = false;
+                btn.textContent = '✨ 完成初始化';
+            }
+        }
+
+        // Auto-detect if already initialized
+        (async function checkInitialized() {
+            try {
+                // Check if accounts.json exists
+                const savedUrl = localStorage.getItem('galaxy_webdav_url');
+                if (savedUrl) {
+                    GALAXY_WEBDAV_URL = savedUrl;
+                    document.getElementById('webdav-url').value = savedUrl;
+                }
+
+                const data = await Storage.readJSON('/accounts.json');
+                if (data && Array.isArray(data) && data.length > 0) {
+                    addLog('检测到系统已初始化，正在跳转至首页...', 'info');
+                    // Redirect to index
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                    return;
+                }
+            } catch (e) {
+                // Not initialized - show setup form
+                addLog('系统未初始化，请完成以下配置', 'info');
+            }
+
+            // Show the setup form
+            document.querySelector('.setup-container').classList.remove('hidden');
+        })();
+
+        Galaxy.init();
+    </script>
+</body>
+</html>
