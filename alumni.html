@@ -10,15 +10,25 @@
     <script src="js/auth.js"></script>
     <script src="js/galaxy.js"></script>
     <style>
+        .alumni-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
         .polaroid {
             background: white;
             padding: 10px 10px 30px 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            transform: rotate(-2deg);
             max-width: 250px;
             color: #333;
             text-align: center;
             border-radius: 3px;
+            margin: 0 auto;
+            transition: transform 0.3s;
+        }
+        .polaroid:hover {
+            transform: rotate(0deg) scale(1.03);
         }
         .polaroid img {
             width: 100%;
@@ -28,13 +38,192 @@
         }
         .polaroid .name {
             font-family: 'Kaiti', 'STKaiti', serif;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             margin-top: 10px;
         }
         .polaroid .wish {
             color: #666;
             font-style: italic;
             margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .view-toggle button {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .view-toggle button.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* List view */
+        .alumni-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .alumni-list-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+        }
+        .alumni-list-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .alumni-list-item .info {
+            flex: 1;
+        }
+        .alumni-list-item .info .name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .alumni-list-item .info .wish {
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        /* Editor styles */
+        .editor-section {
+            margin-top: 2rem;
+        }
+        .editor-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .editor-tabs button {
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .editor-tabs button.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .editor-panel {
+            display: none;
+        }
+        .editor-panel.active {
+            display: block;
+        }
+        .preset-grid {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .preset-item {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .preset-item:hover, .preset-item.selected {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        .layout-options {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .layout-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* Invitation */
+        .invite-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Camera */
+        .camera-container {
+            position: relative;
+            margin-top: 1rem;
+        }
+        #camera-feed {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            display: none;
+        }
+        .camera-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: white !important; color: black !important; }
+            #galaxy-canvas, nav, .no-print, .editor-section, .form-section { display: none !important; }
+            .alumni-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            .polaroid {
+                box-shadow: none !important;
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+                transform: none !important;
+            }
+            .polaroid .name { color: #333; }
+            .polaroid .wish { color: #666; }
+        }
+
+        /* Gradient textarea for forms */
+        .gradient-input {
+            background: #000;
+            border: 2px solid transparent;
+            background-image: linear-gradient(#000, #000), linear-gradient(to right, #7d5fff, #3ae374);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            border-radius: 10px;
+            color: white;
+            padding: 12px 15px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: 0.3s;
+        }
+        .gradient-input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(125, 95, 255, 0.3);
         }
     </style>
 </head>
@@ -46,38 +235,100 @@
         <div class="links">
             <a href="index.html">首页</a>
             <a href="alumni.html">同学录</a>
-            <a href="confession.html">表白墙</a>
+            <a href="gallery.html">留言长廊</a>
+            <a href="cosmos.html">小宇宙</a>
             <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
             <a href="login.html" id="login-link">登录</a>
+            <a href="#" id="logout-link" class="hidden">注销</a>
         </div>
     </nav>
 
     <main>
         <h1 style="text-align: center;">🌟 星图同学录</h1>
         <p style="text-align: center;">每一颗星，都是一个闪光的你</p>
-        
-        <div id="star-map" class="glass">
-            <!-- Stars will be generated here -->
+
+        <!-- View Toggle -->
+        <div class="view-toggle no-print">
+            <button class="active" onclick="switchView('grid')" id="view-grid">📷 卡片视图</button>
+            <button onclick="switchView('list')" id="view-list">📋 列表视图</button>
         </div>
 
-        <section class="glass" style="margin-top: 2rem; padding: 2rem;">
-            <h2>加入星图</h2>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <input type="text" id="alumni-name" placeholder="你的姓名" class="glass">
-                <input type="text" id="alumni-photo" placeholder="照片 URL（可选）" class="glass">
-                <input type="text" id="alumni-wish" placeholder="你的寄语" class="glass">
-                <button class="btn btn-primary" onclick="addAlumni()" style="align-self: flex-start;">🌟 点亮我的星</button>
+        <!-- Alumni Display -->
+        <div id="alumni-container">
+            <div id="alumni-grid" class="alumni-grid">
+                <p style="text-align:center;grid-column:1/-1;opacity:0.6;">加载中...</p>
+            </div>
+            <div id="alumni-list" class="alumni-list hidden"></div>
+        </div>
+
+        <!-- Editor Section -->
+        <section class="glass editor-section no-print" style="padding: 1.5rem;">
+            <h2>🎨 个性名片编辑器</h2>
+            <div class="editor-tabs">
+                <button class="active" onclick="switchEditorTab('basic', this)">📝 基本信息</button>
+                <button onclick="switchEditorTab('style', this)">🎨 样式</button>
+                <button onclick="switchEditorTab('camera', this)">📸 拍照</button>
+            </div>
+
+            <!-- Basic Info Panel -->
+            <div class="editor-panel active" id="panel-basic">
+                <div style="display:flex;flex-direction:column;gap:1rem;">
+                    <input type="text" id="alumni-name" placeholder="你的姓名" class="glass gradient-input">
+                    <input type="text" id="alumni-photo" placeholder="照片 URL（可选）" class="glass gradient-input">
+                    <textarea id="alumni-wish" placeholder="你的寄语" class="glass gradient-input" style="min-height:80px;resize:vertical;"></textarea>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="addAlumni()">🌟 点亮我的星</button>
+                        <button class="btn btn-success invite-btn" onclick="generateInvite()">✉️ 生成邀请函</button>
+                        <button class="btn btn-primary" onclick="window.print()">🖨️ 离线打印</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Style Panel -->
+            <div class="editor-panel" id="panel-style">
+                <h3>预设背景色</h3>
+                <div class="preset-grid">
+                    <div class="preset-item" style="background: linear-gradient(135deg, #667eea, #764ba2);" onclick="selectPreset(this, 'linear-gradient(135deg, #667eea, #764ba2)')">梦幻紫</div>
+                    <div class="preset-item" style="background: linear-gradient(135deg, #f093fb, #f5576c);" onclick="selectPreset(this, 'linear-gradient(135deg, #f093fb, #f5576c)')">玫瑰红</div>
+                    <div class="preset-item" style="background: linear-gradient(135deg, #4facfe, #00f2fe);" onclick="selectPreset(this, 'linear-gradient(135deg, #4facfe, #00f2fe)')">天空蓝</div>
+                    <div class="preset-item" style="background: linear-gradient(135deg, #43e97b, #38f9d7);" onclick="selectPreset(this, 'linear-gradient(135deg, #43e97b, #38f9d7)')">薄荷绿</div>
+                    <div class="preset-item" style="background: linear-gradient(135deg, #fa709a, #fee140);" onclick="selectPreset(this, 'linear-gradient(135deg, #fa709a, #fee140)')">日落橙</div>
+                    <div class="preset-item" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);" onclick="selectPreset(this, 'linear-gradient(135deg, #a18cd1, #fbc2eb)')">薰衣草</div>
+                    <div class="preset-item" style="background: linear-gradient(135deg, #0c3483, #a2b6df);" onclick="selectPreset(this, 'linear-gradient(135deg, #0c3483, #a2b6df)')">深海蓝</div>
+                </div>
+                <h3>自定义背景图</h3>
+                <input type="file" id="bg-upload" accept="image/*" onchange="uploadBackground(this)">
+                <div id="bg-preview" style="margin-top:0.5rem;"></div>
+            </div>
+
+            <!-- Camera Panel -->
+            <div class="editor-panel" id="panel-camera">
+                <div class="camera-container">
+                    <video id="camera-feed" autoplay playsinline></video>
+                    <div class="camera-controls">
+                        <button class="btn btn-primary" onclick="startCamera()">📸 打开摄像头</button>
+                        <button class="btn btn-success" onclick="capturePhoto()">📷 拍照</button>
+                        <button class="btn btn-danger" onclick="stopCamera()">⏹️ 关闭</button>
+                    </div>
+                    <canvas id="capture-canvas" style="display:none;"></canvas>
+                    <div id="captured-preview" style="margin-top:0.5rem;"></div>
+                </div>
             </div>
         </section>
     </main>
 
     <div id="preview-overlay" class="overlay">
-        <div class="overlay-content">
-            <!-- Polaroid card will be here -->
-        </div>
+        <div class="overlay-content"></div>
     </div>
 
     <script>
+        let currentView = 'grid';
+        let selectedPreset = null;
+        let customBgUrl = null;
+        let mediaStream = null;
+        let capturedPhotoData = null;
+
+        // ========== Load Alumni ==========
         async function loadAlumni() {
             let alumni = [];
             try {
@@ -88,7 +339,7 @@
             } catch (e) {
                 console.warn('[Alumni] 加载校友数据失败，使用默认:', e);
             }
-            
+
             if (alumni.length === 0) {
                 alumni = [
                     { name: '王小明', photo: 'https://via.placeholder.com/200x200?text=WXM', wish: '前程似锦！' },
@@ -97,33 +348,71 @@
                 ];
             }
 
-            const map = document.getElementById('star-map');
-            map.innerHTML = '';
-            
-            alumni.forEach((person) => {
-                const star = document.createElement('div');
-                star.className = 'alumni-star';
-                
-                let hash = 0;
-                for (let i = 0; i < person.name.length; i++) {
-                    hash = person.name.charCodeAt(i) + ((hash << 5) - hash);
+            renderGrid(alumni);
+            renderList(alumni);
+        }
+
+        function renderGrid(alumni) {
+            const grid = document.getElementById('alumni-grid');
+            grid.innerHTML = '';
+            alumni.forEach(person => {
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'flex';
+                wrapper.style.justifyContent = 'center';
+                const polaroid = document.createElement('div');
+                polaroid.className = 'polaroid';
+                if (person.bgColor) {
+                    polaroid.style.background = person.bgColor;
+                    polaroid.style.color = '#fff';
                 }
-                const x = Math.abs(hash % 90) + 5;
-                const y = Math.abs((hash >> 8) % 80) + 10;
-                
-                star.style.left = `${x}%`;
-                star.style.top = `${y}%`;
-                
-                star.onclick = () => showCard(person);
-                map.appendChild(star);
+                if (person.bgImage) {
+                    polaroid.style.backgroundImage = `url(${person.bgImage})`;
+                    polaroid.style.backgroundSize = 'cover';
+                    polaroid.style.color = '#fff';
+                }
+                polaroid.innerHTML = `
+                    <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
+                    <div class="name">${person.name}</div>
+                    <div class="wish">💬 ${person.wish}</div>
+                `;
+                polaroid.onclick = () => showCard(person);
+                wrapper.appendChild(polaroid);
+                grid.appendChild(wrapper);
             });
         }
 
+        function renderList(alumni) {
+            const list = document.getElementById('alumni-list');
+            list.innerHTML = '';
+            alumni.forEach(person => {
+                const item = document.createElement('div');
+                item.className = 'alumni-list-item glass';
+                item.innerHTML = `
+                    <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
+                    <div class="info">
+                        <div class="name">${person.name}</div>
+                        <div class="wish">💬 ${person.wish}</div>
+                    </div>
+                `;
+                item.onclick = () => showCard(person);
+                list.appendChild(item);
+            });
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('view-grid').classList.toggle('active', view === 'grid');
+            document.getElementById('view-list').classList.toggle('active', view === 'list');
+            document.getElementById('alumni-grid').classList.toggle('hidden', view !== 'grid');
+            document.getElementById('alumni-list').classList.toggle('hidden', view !== 'list');
+        }
+
+        // ========== Add Alumni ==========
         async function addAlumni() {
             const name = document.getElementById('alumni-name').value.trim();
-            const photo = document.getElementById('alumni-photo').value.trim();
+            let photo = document.getElementById('alumni-photo').value.trim();
             const wish = document.getElementById('alumni-wish').value.trim();
-            
+
             if (!name) {
                 alert('请至少填写姓名');
                 return;
@@ -134,10 +423,59 @@
                 return;
             }
 
+            // If captured photo, upload to WebDAV
+            if (capturedPhotoData) {
+                try {
+                    const base64Data = capturedPhotoData.replace(/^data:image\/\w+;base64,/, '');
+                    const byteChars = atob(base64Data);
+                    const byteNums = new Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) {
+                        byteNums[i] = byteChars.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNums);
+                    const blob = new Blob([byteArray], { type: 'image/png' });
+
+                    const fileName = `photo_${Date.now()}_${Math.random().toString(36).substr(2,6)}.png`;
+                    const baseUrl = (() => {
+                        if (!GALAXY_WEBDAV_URL) return '';
+                        const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
+                        try {
+                            const parsed = new URL(url);
+                            return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+                        } catch { return url; }
+                    })();
+                    const auth = (() => {
+                        if (!GALAXY_WEBDAV_URL) return '';
+                        const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
+                        if (match) return btoa(`${match[1]}:${match[2]}`);
+                        return '';
+                    })();
+
+                    const uploadRes = await fetch(`${baseUrl}/alumni/assets/${fileName}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Basic ${auth}`,
+                            'Content-Type': 'image/png'
+                        },
+                        body: blob
+                    });
+
+                    if (uploadRes.ok) {
+                        photo = `${baseUrl}/alumni/assets/${fileName}`;
+                    }
+                } catch (e) {
+                    console.warn('[Alumni] 上传照片失败:', e);
+                }
+                capturedPhotoData = null;
+                document.getElementById('captured-preview').innerHTML = '';
+            }
+
             const entry = {
                 name,
                 photo: photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7d5fff&color=fff&size=200`,
-                wish: wish || '很高兴认识大家！'
+                wish: wish || '很高兴认识大家！',
+                bgColor: selectedPreset || undefined,
+                bgImage: customBgUrl || undefined
             };
 
             try {
@@ -145,11 +483,14 @@
                 if (!Array.isArray(alumni)) alumni = [];
                 alumni.push(entry);
                 await Storage.writeJSON('/db/alumni.json', alumni);
-                
+
                 alert('✨ 已加入星图！');
                 document.getElementById('alumni-name').value = '';
                 document.getElementById('alumni-photo').value = '';
                 document.getElementById('alumni-wish').value = '';
+                selectedPreset = null;
+                customBgUrl = null;
+                document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('selected'));
                 loadAlumni();
             } catch (e) {
                 console.error('[Alumni] 保存失败:', e);
@@ -157,11 +498,166 @@
             }
         }
 
+        // ========== Editor Tabs ==========
+        function switchEditorTab(tab, btn) {
+            document.querySelectorAll('.editor-tabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.editor-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`panel-${tab}`).classList.add('active');
+        }
+
+        function selectPreset(el, gradient) {
+            document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedPreset = gradient;
+            customBgUrl = null;
+        }
+
+        async function uploadBackground(input) {
+            if (!input.files.length) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const dataUrl = e.target.result;
+                // Upload to WebDAV
+                try {
+                    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+                    const byteChars = atob(base64Data);
+                    const byteNums = new Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) {
+                        byteNums[i] = byteChars.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNums);
+                    const blob = new Blob([byteArray], { type: file.type });
+
+                    const fileName = `bg_${Date.now()}_${Math.random().toString(36).substr(2,6)}.${file.name.split('.').pop()}`;
+                    const baseUrl = (() => {
+                        if (!GALAXY_WEBDAV_URL) return '';
+                        const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
+                        try {
+                            const parsed = new URL(url);
+                            return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+                        } catch { return url; }
+                    })();
+                    const auth = (() => {
+                        if (!GALAXY_WEBDAV_URL) return '';
+                        const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
+                        if (match) return btoa(`${match[1]}:${match[2]}`);
+                        return '';
+                    })();
+
+                    const res = await fetch(`${baseUrl}/alumni/assets/${fileName}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Basic ${auth}`,
+                            'Content-Type': file.type
+                        },
+                        body: blob
+                    });
+
+                    if (res.ok) {
+                        customBgUrl = `${baseUrl}/alumni/assets/${fileName}`;
+                        selectedPreset = null;
+                        document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
+                        document.getElementById('bg-preview').innerHTML = `<img src="${customBgUrl}" style="max-width:200px;border-radius:8px;margin-top:0.5rem;">`;
+                        alert('✅ 背景图上传成功');
+                    }
+                } catch (e) {
+                    console.warn('[Alumni] 背景上传失败:', e);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ========== Camera ==========
+        async function startCamera() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const video = document.getElementById('camera-feed');
+                video.srcObject = mediaStream;
+                video.style.display = 'block';
+            } catch (e) {
+                alert('无法打开摄像头: ' + e.message);
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera-feed');
+            const canvas = document.getElementById('capture-canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            capturedPhotoData = canvas.toDataURL('image/png');
+            document.getElementById('captured-preview').innerHTML = `
+                <img src="${capturedPhotoData}" style="max-width:200px;border-radius:8px;border:2px solid var(--primary-color);">
+                <p style="font-size:0.85rem;opacity:0.7;">✅ 已拍照</p>
+            `;
+        }
+
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            document.getElementById('camera-feed').style.display = 'none';
+        }
+
+        // ========== Invitation ==========
+        function generateInvite() {
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?mode=add`;
+            const text = `🌟 邀请你加入星河记忆同学录！\n\n点击链接填写信息：\n${inviteUrl}\n\n✨ 每颗星都是独一无二的你！`;
+
+            // Copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ 邀请链接已复制到剪贴板！\n\n将以下内容分享给同学：\n\n' + text);
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('✅ 邀请链接已复制！');
+            } catch (e) {
+                alert('请手动复制邀请链接：\n\n' + text);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // Check for invite mode
+        (function checkInviteMode() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('mode') === 'add') {
+                document.querySelector('.editor-section').scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('alumni-name').focus();
+            }
+        })();
+
+        // ========== Card Preview ==========
         function showCard(person) {
             const overlay = document.getElementById('preview-overlay');
             const content = overlay.querySelector('.overlay-content');
+            let style = '';
+            if (person.bgColor) {
+                style = `background: ${person.bgColor}; color: #fff;`;
+            }
+            if (person.bgImage) {
+                style = `background-image: url(${person.bgImage}); background-size: cover; color: #fff;`;
+            }
             content.innerHTML = `
-                <div class="polaroid">
+                <div class="polaroid" style="${style}">
                     <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
                     <div class="name">${person.name}</div>
                     <div class="wish">💬 ${person.wish}</div>
@@ -174,16 +670,22 @@
             this.style.display = 'none';
         };
 
+        document.getElementById('logout-link').onclick = (e) => {
+            e.preventDefault();
+            Auth.logout();
+            location.reload();
+        };
+
+        // ========== Init ==========
         Galaxy.init();
         loadAlumni();
-        
-        // Auth check
+
         const user = Auth.getUser();
-        if (user && (user.role === 'admin' || user.role === 'head')) {
-            document.getElementById('admin-link').classList.remove('hidden');
-        }
         if (user) {
             document.getElementById('login-link').classList.add('hidden');
+            if (user.role === 'admin' || user.role === 'head') {
+                document.getElementById('admin-link').classList.remove('hidden');
+            }
         }
     </script>
 </body>
