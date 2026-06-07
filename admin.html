@@ -103,7 +103,7 @@
         // Account Management
         async function loadAccounts() {
             try {
-                const accounts = await Storage.readJSON('/db/users.json');
+                const accounts = await Storage.readJSON('/db/accounts.json');
                 const tbody = document.getElementById('accounts-body');
                 tbody.innerHTML = '';
                 if (!accounts || !Array.isArray(accounts)) {
@@ -118,7 +118,7 @@
                         <td>${roleLabel}</td>
                         <td>${acc.createdAt ? new Date(acc.createdAt).toLocaleString() : '未知'}</td>
                         <td>
-                            <button class="btn btn-danger" onclick="deleteAccount('${acc.username}')">删除</button>
+                            ${acc.username !== currentUser.username ? `<button class="btn btn-danger" onclick="deleteAccount('${acc.username}')">删除</button>` : '<em>(当前账号)</em>'}
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -127,18 +127,6 @@
                 console.warn('[Admin] 加载账号失败:', e);
                 document.getElementById('accounts-body').innerHTML = '<tr><td colspan="4">加载失败</td></tr>';
             }
-        }
-
-        // Simple hash matching for password validation
-        function hashPassword(password) {
-            let hash = 0;
-            const str = `${password}`;
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return `sha256-fake-${Math.abs(hash).toString(16)}`;
         }
 
         async function addAccount() {
@@ -152,7 +140,7 @@
             }
 
             try {
-                let accounts = await Storage.readJSON('/db/users.json') || [];
+                let accounts = await Storage.readJSON('/db/accounts.json') || [];
                 if (!Array.isArray(accounts)) accounts = [];
 
                 if (accounts.find(u => u.username === username)) {
@@ -160,14 +148,15 @@
                     return;
                 }
 
+                const passwordHash = await Auth.hashPassword(password);
                 accounts.push({
                     username,
-                    passwordHash: hashPassword(password),
+                    passwordHash,
                     role,
                     createdAt: Date.now()
                 });
 
-                await Storage.writeJSON('/db/users.json', accounts);
+                await Storage.writeJSON('/db/accounts.json', accounts);
                 alert('✅ 添加成功');
                 document.getElementById('new-username').value = '';
                 document.getElementById('new-password').value = '';
@@ -182,10 +171,10 @@
             if (!confirm(`确定删除账号 "${username}"？`)) return;
 
             try {
-                let accounts = await Storage.readJSON('/db/users.json') || [];
+                let accounts = await Storage.readJSON('/db/accounts.json') || [];
                 if (!Array.isArray(accounts)) accounts = [];
                 accounts = accounts.filter(u => u.username !== username);
-                await Storage.writeJSON('/db/users.json', accounts);
+                await Storage.writeJSON('/db/accounts.json', accounts);
                 loadAccounts();
             } catch (e) {
                 console.error('[Admin] 删除账号失败:', e);
@@ -247,7 +236,6 @@
 
         async function approveContent(name) {
             try {
-                // Move file from pending to approved via WebDAV
                 const auth = (() => {
                     if (!GALAXY_WEBDAV_URL) return null;
                     const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
@@ -271,7 +259,6 @@
                     return;
                 }
 
-                // Read file from pending, write to approved, delete from pending
                 const readRes = await fetch(`${baseUrl}/exhibition/pending/${name}`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
@@ -297,29 +284,10 @@
                     return;
                 }
 
-                // Delete from pending
                 await fetch(`${baseUrl}/exhibition/pending/${name}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
-
-                // Update metadata
-                try {
-                    let metadata = await Storage.readJSON('/db/metadata.json') || {};
-                    if (metadata[name]) {
-                        metadata[name].approvedBy = currentUser.username;
-                        metadata[name].approvedAt = Date.now();
-                    } else {
-                        metadata[name] = {
-                            approvedBy: currentUser.username,
-                            approvedAt: Date.now(),
-                            uploader: 'unknown'
-                        };
-                    }
-                    await Storage.writeJSON('/db/metadata.json', metadata);
-                } catch (e) {
-                    // Metadata is optional
-                }
 
                 alert('✅ 已通过');
                 loadPending();
@@ -376,14 +344,8 @@
                 return;
             }
 
-            if (currentUser && currentUser.username === 'admin729') {
-                msg.textContent = '⚠️ 硬编码管理员密码无法在此修改';
-                msg.style.color = '#ff4d4d';
-                return;
-            }
-
             try {
-                let accounts = await Storage.readJSON('/db/users.json') || [];
+                let accounts = await Storage.readJSON('/db/accounts.json') || [];
                 if (!Array.isArray(accounts)) accounts = [];
                 
                 const idx = accounts.findIndex(u => u.username === currentUser.username);
@@ -393,8 +355,8 @@
                     return;
                 }
 
-                accounts[idx].passwordHash = hashPassword(newPassword);
-                await Storage.writeJSON('/db/users.json', accounts);
+                accounts[idx].passwordHash = await Auth.hashPassword(newPassword);
+                await Storage.writeJSON('/db/accounts.json', accounts);
                 
                 msg.textContent = '✅ 密码修改成功';
                 msg.style.color = '#3ae374';

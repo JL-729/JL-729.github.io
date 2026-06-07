@@ -27,7 +27,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (!username || !password || !role) {
       return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 });
     }
-    if (users.find(u => u.username === username) || username === 'admin729') {
+    if (users.find(u => u.username === username)) {
       return new Response(JSON.stringify({ error: 'User already exists' }), { status: 400 });
     }
 

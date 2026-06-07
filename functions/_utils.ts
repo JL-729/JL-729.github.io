@@ -66,14 +66,14 @@ export async function getWebDAVClient(env: Env) {
 
 export async function getUsers(env: Env): Promise<User[]> {
   const client = await getWebDAVClient(env);
-  const res = await client.get('/db/users.json');
+  const res = await client.get('/db/accounts.json');
   if (!res) return [];
   return await res.json();
 }
 
 export async function saveUsers(env: Env, users: User[]) {
   const client = await getWebDAVClient(env);
-  await client.put('/db/users.json', JSON.stringify(users), 'application/json');
+  await client.put('/db/accounts.json', JSON.stringify(users), 'application/json');
 }
 
 export async function verifyJWT(token: string, secret: string): Promise<any> {
@@ -139,16 +139,6 @@ export async function getAuthenticatedUser(request: Request, env: Env): Promise<
     const token = match[1];
     const payload = await verifyJWT(token, env.JWT_SECRET);
     if (!payload || !payload.username) return null;
-    
-    // Hardcoded head account
-    if (payload.username === 'admin729') {
-        return {
-            username: 'admin729',
-            passwordHash: '', // Not needed here
-            role: 'head',
-            createdAt: 0
-        };
-    }
     
     const users = await getUsers(env);
     return users.find(u => u.username === payload.username) || null;
