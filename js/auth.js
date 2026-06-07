@@ -1,38 +1,27 @@
 // 星河记忆 - 前端权限认证模块
-// 使用 localStorage 管理登录态，硬编码 admin729 / nahida#1027 为 Head 角色
+// 使用 localStorage 管理登录态，彻底移除硬编码验证
 
 const Auth = (() => {
     const STORAGE_KEY = 'galaxy_memory_session';
 
-    function hashPassword(password) {
-        let hash = 0;
-        const str = `${password}`;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return `sha256-fake-${Math.abs(hash).toString(16)}`;
+    // 统一异步 SHA-256 哈希算法
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     return {
-        async login(username, password) {
-            // Check hardcoded admin first
-            if (username === HARDCODED_ADMIN.username && password === HARDCODED_ADMIN.password) {
-                const session = {
-                    username: HARDCODED_ADMIN.username,
-                    role: HARDCODED_ADMIN.role,
-                    loginTime: Date.now()
-                };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-                return { success: true, role: HARDCODED_ADMIN.role };
-            }
+        hashPassword,
 
+        async login(username, password) {
             // Try to authenticate against WebDAV accounts.json
             try {
-                const accountsData = await Storage.readJSON('/db/users.json');
+                const accountsData = await Storage.readJSON('/db/accounts.json');
                 if (accountsData && Array.isArray(accountsData)) {
-                    const hashedInput = hashPassword(password);
+                    const hashedInput = await hashPassword(password);
                     const user = accountsData.find(u => u.username === username && u.passwordHash === hashedInput);
                     if (user) {
                         const session = {
@@ -73,7 +62,9 @@ const Auth = (() => {
             const user = this.getUser();
             if (!user) return false;
             const roles = ['user', 'admin', 'head'];
-            return roles.indexOf(user.role) >= roles.indexOf(minRole);
+            const minIndex = roles.indexOf(minRole);
+            const userIndex = roles.indexOf(user.role);
+            return userIndex >= minIndex;
         },
 
         isHead() {

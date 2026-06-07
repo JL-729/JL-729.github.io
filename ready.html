@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="js/config.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/galaxy.js"></script>
     <style>
         .setup-container {
@@ -101,6 +102,16 @@
             margin-top: 0.5rem;
             font-size: 0.85rem;
         }
+        .cors-alert {
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid #ffa500;
+            color: #ffa500;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -120,8 +131,12 @@
             <!-- Step 1: WebDAV Configuration -->
             <div id="step-1">
                 <h2>📡 第一步：配置 WebDAV 连接</h2>
+                <div id="cors-warning" class="cors-alert">
+                    ⚠️ <strong>检测到潜在的跨域 (CORS) 问题：</strong><br>
+                    无法连接到服务器。请确保 WebDAV 服务已开启跨域访问 (CORS) 并允许来自此域名的请求。如果是自建服务，请检查浏览器插件是否拦截了请求。
+                </div>
                 <p style="opacity:0.7;font-size:0.9rem;margin-bottom:1.5rem;">
-                    请输入你的 WebDAV 服务器详细连接信息
+                    请输入你的 WebDAV 服务器详细连接信息。此账号也将作为系统的首个管理员（Head）账号。
                 </p>
                 <div class="form-group">
                     <label>WebDAV 地址</label>
@@ -206,7 +221,10 @@
             const user = document.getElementById('webdav-user').value.trim();
             const pass = document.getElementById('webdav-pass').value.trim();
             const resultDiv = document.getElementById('test-result');
+            const corsWarning = document.getElementById('cors-warning');
             const btn = resultDiv.previousElementSibling;
+
+            corsWarning.style.display = 'none';
 
             if (!server || !user || !pass) {
                 resultDiv.innerHTML = '<span style="color:#ff4d4d;">⚠️ 请填写完整的连接信息</span>';
@@ -226,7 +244,7 @@
 
             // Save to localStorage temporarily for storage module
             localStorage.setItem('galaxy_webdav_url', fullUrl);
-            // Reload config
+            // Reload global config variable
             GALAXY_WEBDAV_URL = fullUrl;
 
             try {
@@ -238,11 +256,16 @@
                     webdavValidated = true;
                     updateSteps(2);
                 } else {
-                    throw new Error('无法列出根目录');
+                    throw new Error('无法列出根目录，请检查路径权限');
                 }
             } catch (e) {
                 addLog(`连接失败: ${e.message}`, 'error');
-                resultDiv.innerHTML = `<span style="color:#ff4d4d;">❌ 连接失败: ${e.message}</span>`;
+                if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
+                    corsWarning.style.display = 'block';
+                    resultDiv.innerHTML = `<span style="color:#ff4d4d;">❌ 网络连接错误，可能是 CORS 限制</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span style="color:#ff4d4d;">❌ 连接失败: ${e.message}</span>`;
+                }
                 webdavValidated = false;
                 localStorage.removeItem('galaxy_webdav_url');
             }
@@ -312,45 +335,36 @@
             statusDiv.innerHTML = '';
             hideStatus();
 
+            const username = document.getElementById('webdav-user').value.trim();
+            const password = document.getElementById('webdav-pass').value.trim();
+
             try {
-                // Write accounts.json with hardcoded admin
+                addLog('生成管理员账户哈希...', 'info');
+                const passwordHash = await Auth.hashPassword(password);
+
                 addLog('写入 accounts.json ...', 'info');
                 const accountsData = [
                     {
-                        username: HARDCODED_ADMIN.username,
-                        passwordHash: (() => {
-                            let hash = 0;
-                            const str = HARDCODED_ADMIN.password;
-                            for (let i = 0; i < str.length; i++) {
-                                const char = str.charCodeAt(i);
-                                hash = ((hash << 5) - hash) + char;
-                                hash = hash & hash;
-                            }
-                            return `sha256-fake-${Math.abs(hash).toString(16)}`;
-                        })(),
-                        role: HARDCODED_ADMIN.role,
+                        username: username,
+                        passwordHash: passwordHash,
+                        role: 'head',
                         createdAt: Date.now()
                     }
                 ];
-                await Storage.writeJSON('/accounts.json', accountsData);
+                await Storage.writeJSON('/db/accounts.json', accountsData);
                 addLog('✅ accounts.json 写入成功', 'success');
 
                 // Write empty data files
                 addLog('写入初始数据文件...', 'info');
                 await Storage.writeJSON('/db/alumni.json', []);
-                addLog('✅ alumni.json 写入成功', 'success');
                 await Storage.writeJSON('/db/blog.json', []);
-                addLog('✅ blog.json 写入成功', 'success');
                 await Storage.writeJSON('/db/lanterns.json', []);
-                addLog('✅ lanterns.json 写入成功', 'success');
                 
                 addLog('🎉 系统初始化完成！', 'success');
 
                 statusDiv.innerHTML = '<span style="color:var(--secondary-color);">✅ 所有初始数据写入成功！</span>';
-
                 showStatus('🎉 初始化完成！即将跳转至首页...', 'success');
 
-                // Redirect after a short delay
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
@@ -370,7 +384,6 @@
                 const savedUrl = localStorage.getItem('galaxy_webdav_url');
                 if (savedUrl) {
                     GALAXY_WEBDAV_URL = savedUrl;
-                    // Try to parse components back
                     try {
                         const urlObj = new URL(savedUrl);
                         document.getElementById('webdav-server').value = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
@@ -379,10 +392,9 @@
                     } catch(e) {}
                 }
 
-                const data = await Storage.readJSON('/accounts.json');
+                const data = await Storage.readJSON('/db/accounts.json');
                 if (data && Array.isArray(data) && data.length > 0) {
                     addLog('检测到系统已初始化，正在跳转至首页...', 'info');
-                    // Lock the page: Hide form, show message
                     document.querySelector('.setup-container').innerHTML = `
                         <h1>🌌 系统已锁定</h1>
                         <p class="subtitle">星河已成功初始化并连接至云端存储。</p>
@@ -395,11 +407,8 @@
                     return;
                 }
             } catch (e) {
-                // Not initialized - show setup form
                 addLog('系统未初始化，请完成以下配置', 'info');
             }
-
-            // Show the setup form
             document.querySelector('.setup-container').classList.remove('hidden');
         })();
 

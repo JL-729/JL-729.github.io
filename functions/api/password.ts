@@ -14,10 +14,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return new Response(JSON.stringify({ error: 'Missing new password' }), { status: 400 });
   }
 
-  if (user.username === 'admin729') {
-      return new Response(JSON.stringify({ error: 'Cannot change hardcoded admin password here' }), { status: 403 });
-  }
-
   const users = await getUsers(env);
   const userIdx = users.findIndex(u => u.username === user.username);
   if (userIdx === -1) {

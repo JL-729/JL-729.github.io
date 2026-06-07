@@ -12,10 +12,3 @@ let GALAXY_WEBDAV_URL = (() => {
     } catch (e) { /* ignore */ }
     return ''; // 在此填写你的 WebDAV 连接地址（仅作为后备）
 })();
-
-// 硬编码管理员账号
-const HARDCODED_ADMIN = {
-    username: 'admin729',
-    password: 'nahida#1027',
-    role: 'head'
-};
