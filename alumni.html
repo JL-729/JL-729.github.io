@@ -207,23 +207,28 @@
             .polaroid .wish { color: #666; }
         }
 
-        /* Gradient textarea for forms */
-        .gradient-input {
-            background: #000;
-            border: 2px solid transparent;
-            background-image: linear-gradient(#000, #000), linear-gradient(to right, #7d5fff, #3ae374);
-            background-origin: border-box;
-            background-clip: padding-box, border-box;
-            border-radius: 10px;
-            color: white;
-            padding: 12px 15px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: 0.3s;
+        /* Permissions & Filter */
+        .filter-info {
+            text-align: center;
+            font-size: 0.85rem;
+            opacity: 0.6;
+            margin-bottom: 1rem;
         }
-        .gradient-input:focus {
-            outline: none;
-            box-shadow: 0 0 15px rgba(125, 95, 255, 0.3);
+
+        /* Improved Editor */
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .color-picker-container input[type="color"] {
+            width: 50px;
+            height: 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: transparent;
         }
     </style>
 </head>
@@ -235,7 +240,7 @@
         <div class="links">
             <a href="index.html">首页</a>
             <a href="alumni.html">同学录</a>
-            <a href="gallery.html">留言长廊</a>
+            <a href="lanterns.html">孔明灯</a><a href="blog.html">星河博客</a>
             <a href="cosmos.html">小宇宙</a>
             <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
             <a href="login.html" id="login-link">登录</a>
@@ -255,6 +260,7 @@
 
         <!-- Alumni Display -->
         <div id="alumni-container">
+            <div id="filter-info" class="filter-info"></div>
             <div id="alumni-grid" class="alumni-grid">
                 <p style="text-align:center;grid-column:1/-1;opacity:0.6;">加载中...</p>
             </div>
@@ -266,19 +272,23 @@
             <h2>🎨 个性名片编辑器</h2>
             <div class="editor-tabs">
                 <button class="active" onclick="switchEditorTab('basic', this)">📝 基本信息</button>
-                <button onclick="switchEditorTab('style', this)">🎨 样式</button>
+                <button onclick="switchEditorTab('style', this)">🎨 视觉定制</button>
                 <button onclick="switchEditorTab('camera', this)">📸 拍照</button>
             </div>
 
             <!-- Basic Info Panel -->
             <div class="editor-panel active" id="panel-basic">
                 <div style="display:flex;flex-direction:column;gap:1rem;">
-                    <input type="text" id="alumni-name" placeholder="你的姓名" class="glass gradient-input">
+                    <div style="display:grid;grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <input type="text" id="alumni-name" placeholder="你的姓名" class="glass gradient-input">
+                        <input type="text" id="alumni-school" placeholder="学校/班级 (客观项)" class="glass gradient-input">
+                    </div>
                     <input type="text" id="alumni-photo" placeholder="照片 URL（可选）" class="glass gradient-input">
                     <textarea id="alumni-wish" placeholder="你的寄语" class="glass gradient-input" style="min-height:80px;resize:vertical;"></textarea>
+                    <input type="hidden" id="alumni-inviter">
                     <div style="display:flex;gap:1rem;flex-wrap:wrap;">
                         <button class="btn btn-primary" onclick="addAlumni()">🌟 点亮我的星</button>
-                        <button class="btn btn-success invite-btn" onclick="generateInvite()">✉️ 生成邀请函</button>
+                        <button class="btn btn-success invite-btn" onclick="generateInvite()">✉️ 发出专属邀请</button>
                         <button class="btn btn-primary" onclick="window.print()">🖨️ 离线打印</button>
                     </div>
                 </div>
@@ -286,18 +296,24 @@
 
             <!-- Style Panel -->
             <div class="editor-panel" id="panel-style">
-                <h3>预设背景色</h3>
+                <h3>预设背景</h3>
                 <div class="preset-grid">
                     <div class="preset-item" style="background: linear-gradient(135deg, #667eea, #764ba2);" onclick="selectPreset(this, 'linear-gradient(135deg, #667eea, #764ba2)')">梦幻紫</div>
                     <div class="preset-item" style="background: linear-gradient(135deg, #f093fb, #f5576c);" onclick="selectPreset(this, 'linear-gradient(135deg, #f093fb, #f5576c)')">玫瑰红</div>
                     <div class="preset-item" style="background: linear-gradient(135deg, #4facfe, #00f2fe);" onclick="selectPreset(this, 'linear-gradient(135deg, #4facfe, #00f2fe)')">天空蓝</div>
                     <div class="preset-item" style="background: linear-gradient(135deg, #43e97b, #38f9d7);" onclick="selectPreset(this, 'linear-gradient(135deg, #43e97b, #38f9d7)')">薄荷绿</div>
-                    <div class="preset-item" style="background: linear-gradient(135deg, #fa709a, #fee140);" onclick="selectPreset(this, 'linear-gradient(135deg, #fa709a, #fee140)')">日落橙</div>
-                    <div class="preset-item" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);" onclick="selectPreset(this, 'linear-gradient(135deg, #a18cd1, #fbc2eb)')">薰衣草</div>
-                    <div class="preset-item" style="background: linear-gradient(135deg, #0c3483, #a2b6df);" onclick="selectPreset(this, 'linear-gradient(135deg, #0c3483, #a2b6df)')">深海蓝</div>
+                    <div class="preset-item" style="background: #000000; border: 1px solid #444;" onclick="selectPreset(this, '#000000')">纯黑</div>
                 </div>
-                <h3>自定义背景图</h3>
-                <input type="file" id="bg-upload" accept="image/*" onchange="uploadBackground(this)">
+                
+                <div class="color-picker-container">
+                    <label>主题色：</label>
+                    <input type="color" id="theme-color" value="#7d5fff" onchange="updatePreview()">
+                    <label>文字色：</label>
+                    <input type="color" id="text-color" value="#ffffff" onchange="updatePreview()">
+                </div>
+
+                <h3>自定义背景图 (直连 WebDAV)</h3>
+                <input type="file" id="bg-upload" accept="image/*" onchange="uploadFile(this, 'bg')">
                 <div id="bg-preview" style="margin-top:0.5rem;"></div>
             </div>
 
@@ -337,42 +353,59 @@
                     alumni = data;
                 }
             } catch (e) {
-                console.warn('[Alumni] 加载校友数据失败，使用默认:', e);
+                console.warn('[Alumni] 加载校友数据失败:', e);
             }
 
-            if (alumni.length === 0) {
-                alumni = [
-                    { name: '王小明', photo: 'https://via.placeholder.com/200x200?text=WXM', wish: '前程似锦！' },
-                    { name: '李华', photo: 'https://via.placeholder.com/200x200?text=LH', wish: '江湖再见。' },
-                    { name: '张伟', photo: 'https://via.placeholder.com/200x200?text=ZW', wish: '永远少年！' }
-                ];
+            const currentUser = Auth.getUser();
+            const filterInfo = document.getElementById('filter-info');
+            
+            // Filter: 填写的同学录仅发起邀请的同学可见
+            let filteredAlumni = alumni;
+            if (currentUser && currentUser.role !== 'head') {
+                filteredAlumni = alumni.filter(a => 
+                    a.inviter === currentUser.username || 
+                    a.name === currentUser.username ||
+                    a.username === currentUser.username
+                );
+                filterInfo.textContent = `当前展示：由我邀请或属于我的名片 (${filteredAlumni.length}/${alumni.length})`;
+            } else if (!currentUser) {
+                filteredAlumni = [];
+                filterInfo.textContent = '请登录后查看你邀请的同学录';
+            } else {
+                filterInfo.textContent = `管理员模式：展示所有名片 (${alumni.length})`;
             }
 
-            renderGrid(alumni);
-            renderList(alumni);
+            renderGrid(filteredAlumni);
+            renderList(filteredAlumni);
         }
 
         function renderGrid(alumni) {
             const grid = document.getElementById('alumni-grid');
             grid.innerHTML = '';
+            if (alumni.length === 0) {
+                grid.innerHTML = '<p style="text-align:center;grid-column:1/-1;opacity:0.6;padding:2rem;">暂无名片可显示</p>';
+                return;
+            }
             alumni.forEach(person => {
                 const wrapper = document.createElement('div');
                 wrapper.style.display = 'flex';
                 wrapper.style.justifyContent = 'center';
                 const polaroid = document.createElement('div');
                 polaroid.className = 'polaroid';
-                if (person.bgColor) {
-                    polaroid.style.background = person.bgColor;
-                    polaroid.style.color = '#fff';
-                }
-                if (person.bgImage) {
-                    polaroid.style.backgroundImage = `url(${person.bgImage})`;
+                
+                const style = person.style || {};
+                if (style.bgColor) polaroid.style.background = style.bgColor;
+                if (style.bgImage) {
+                    polaroid.style.backgroundImage = `url(${style.bgImage})`;
                     polaroid.style.backgroundSize = 'cover';
-                    polaroid.style.color = '#fff';
+                    polaroid.style.backgroundPosition = 'center';
                 }
+                if (style.textColor) polaroid.style.color = style.textColor;
+                
                 polaroid.innerHTML = `
                     <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
                     <div class="name">${person.name}</div>
+                    ${person.school ? `<div style="font-size:0.8rem;opacity:0.8;">${person.school}</div>` : ''}
                     <div class="wish">💬 ${person.wish}</div>
                 `;
                 polaroid.onclick = () => showCard(person);
@@ -390,7 +423,7 @@
                 item.innerHTML = `
                     <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
                     <div class="info">
-                        <div class="name">${person.name}</div>
+                        <div class="name">${person.name} ${person.school ? `<span style="font-size:0.8rem;opacity:0.6;">(${person.school})</span>` : ''}</div>
                         <div class="wish">💬 ${person.wish}</div>
                     </div>
                 `;
@@ -407,98 +440,74 @@
             document.getElementById('alumni-list').classList.toggle('hidden', view !== 'list');
         }
 
-        // ========== Add Alumni ==========
+        async function uploadFile(input, type) {
+            if (!input.files.length) return null;
+            const file = input.files[0];
+            try {
+                const fileName = `${type}_${Date.now()}_${Math.random().toString(36).substr(2,6)}.${file.name.split('.').pop()}`;
+                const path = `/alumni/assets/${fileName}`;
+                const res = await Storage.put(path, file);
+                if (res) {
+                    const url = `${Storage.getBaseUrl()}${path}`;
+                    if (type === 'bg') {
+                        customBgUrl = url;
+                        document.getElementById('bg-preview').innerHTML = `<img src="${url}" style="max-width:200px;border-radius:8px;margin-top:0.5rem;">`;
+                    }
+                    return url;
+                }
+            } catch (e) {
+                console.error('[Alumni] 上传失败:', e);
+                alert('上传失败');
+            }
+            return null;
+        }
+
         async function addAlumni() {
             const name = document.getElementById('alumni-name').value.trim();
+            const school = document.getElementById('alumni-school').value.trim();
             let photo = document.getElementById('alumni-photo').value.trim();
             const wish = document.getElementById('alumni-wish').value.trim();
+            const inviter = document.getElementById('alumni-inviter').value;
 
-            if (!name) {
-                alert('请至少填写姓名');
-                return;
-            }
+            if (!name) { alert('请填写姓名'); return; }
 
-            if (!Auth.isLoggedIn()) {
-                alert('请先登录后再加入星图');
-                return;
-            }
-
-            // If captured photo, upload to WebDAV
             if (capturedPhotoData) {
-                try {
-                    const base64Data = capturedPhotoData.replace(/^data:image\/\w+;base64,/, '');
-                    const byteChars = atob(base64Data);
-                    const byteNums = new Array(byteChars.length);
-                    for (let i = 0; i < byteChars.length; i++) {
-                        byteNums[i] = byteChars.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNums);
-                    const blob = new Blob([byteArray], { type: 'image/png' });
-
-                    const fileName = `photo_${Date.now()}_${Math.random().toString(36).substr(2,6)}.png`;
-                    const baseUrl = (() => {
-                        if (!GALAXY_WEBDAV_URL) return '';
-                        const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
-                        try {
-                            const parsed = new URL(url);
-                            return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
-                        } catch { return url; }
-                    })();
-                    const auth = (() => {
-                        if (!GALAXY_WEBDAV_URL) return '';
-                        const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
-                        if (match) return btoa(`${match[1]}:${match[2]}`);
-                        return '';
-                    })();
-
-                    const uploadRes = await fetch(`${baseUrl}/alumni/assets/${fileName}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Basic ${auth}`,
-                            'Content-Type': 'image/png'
-                        },
-                        body: blob
-                    });
-
-                    if (uploadRes.ok) {
-                        photo = `${baseUrl}/alumni/assets/${fileName}`;
-                    }
-                } catch (e) {
-                    console.warn('[Alumni] 上传照片失败:', e);
-                }
+                const base64Data = capturedPhotoData.replace(/^data:image\/\w+;base64,/, '');
+                const byteChars = atob(base64Data);
+                const byteNums = new Array(byteChars.length);
+                for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+                const byteArray = new Uint8Array(byteNums);
+                const blob = new Blob([byteArray], { type: 'image/png' });
+                const path = `/alumni/assets/capture_${Date.now()}.png`;
+                await Storage.put(path, blob);
+                photo = `${Storage.getBaseUrl()}${path}`;
                 capturedPhotoData = null;
-                document.getElementById('captured-preview').innerHTML = '';
             }
 
             const entry = {
-                name,
+                name, school,
                 photo: photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7d5fff&color=fff&size=200`,
-                wish: wish || '很高兴认识大家！',
-                bgColor: selectedPreset || undefined,
-                bgImage: customBgUrl || undefined
+                wish: wish || '前程似锦！',
+                inviter: inviter || (Auth.getUser() ? Auth.getUser().username : 'system'),
+                createdAt: Date.now(),
+                style: {
+                    bgColor: selectedPreset || document.getElementById('theme-color').value,
+                    bgImage: customBgUrl || undefined,
+                    textColor: document.getElementById('text-color').value
+                }
             };
 
             try {
                 let alumni = await Storage.readJSON('/db/alumni.json') || [];
-                if (!Array.isArray(alumni)) alumni = [];
                 alumni.push(entry);
                 await Storage.writeJSON('/db/alumni.json', alumni);
-
-                alert('✨ 已加入星图！');
-                document.getElementById('alumni-name').value = '';
-                document.getElementById('alumni-photo').value = '';
-                document.getElementById('alumni-wish').value = '';
-                selectedPreset = null;
-                customBgUrl = null;
-                document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('selected'));
-                loadAlumni();
+                alert('✨ 名片已保存！');
+                location.reload();
             } catch (e) {
-                console.error('[Alumni] 保存失败:', e);
-                alert('保存失败，请重试');
+                alert('保存失败');
             }
         }
 
-        // ========== Editor Tabs ==========
         function switchEditorTab(tab, btn) {
             document.querySelectorAll('.editor-tabs button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -506,79 +515,20 @@
             document.getElementById(`panel-${tab}`).classList.add('active');
         }
 
-        function selectPreset(el, gradient) {
+        function selectPreset(el, value) {
             document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
             el.classList.add('selected');
-            selectedPreset = gradient;
+            selectedPreset = value;
             customBgUrl = null;
         }
 
-        async function uploadBackground(input) {
-            if (!input.files.length) return;
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const dataUrl = e.target.result;
-                // Upload to WebDAV
-                try {
-                    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-                    const byteChars = atob(base64Data);
-                    const byteNums = new Array(byteChars.length);
-                    for (let i = 0; i < byteChars.length; i++) {
-                        byteNums[i] = byteChars.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNums);
-                    const blob = new Blob([byteArray], { type: file.type });
-
-                    const fileName = `bg_${Date.now()}_${Math.random().toString(36).substr(2,6)}.${file.name.split('.').pop()}`;
-                    const baseUrl = (() => {
-                        if (!GALAXY_WEBDAV_URL) return '';
-                        const url = GALAXY_WEBDAV_URL.replace(/\/+$/, '');
-                        try {
-                            const parsed = new URL(url);
-                            return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
-                        } catch { return url; }
-                    })();
-                    const auth = (() => {
-                        if (!GALAXY_WEBDAV_URL) return '';
-                        const match = GALAXY_WEBDAV_URL.match(/https?:\/\/([^:]+):([^@]+)@/);
-                        if (match) return btoa(`${match[1]}:${match[2]}`);
-                        return '';
-                    })();
-
-                    const res = await fetch(`${baseUrl}/alumni/assets/${fileName}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Basic ${auth}`,
-                            'Content-Type': file.type
-                        },
-                        body: blob
-                    });
-
-                    if (res.ok) {
-                        customBgUrl = `${baseUrl}/alumni/assets/${fileName}`;
-                        selectedPreset = null;
-                        document.querySelectorAll('.preset-item').forEach(p => p.classList.remove('selected'));
-                        document.getElementById('bg-preview').innerHTML = `<img src="${customBgUrl}" style="max-width:200px;border-radius:8px;margin-top:0.5rem;">`;
-                        alert('✅ 背景图上传成功');
-                    }
-                } catch (e) {
-                    console.warn('[Alumni] 背景上传失败:', e);
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // ========== Camera ==========
         async function startCamera() {
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 const video = document.getElementById('camera-feed');
                 video.srcObject = mediaStream;
                 video.style.display = 'block';
-            } catch (e) {
-                alert('无法打开摄像头: ' + e.message);
-            }
+            } catch (e) { alert('无法打开摄像头: ' + e.message); }
         }
 
         function capturePhoto() {
@@ -589,104 +539,52 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             capturedPhotoData = canvas.toDataURL('image/png');
-            document.getElementById('captured-preview').innerHTML = `
-                <img src="${capturedPhotoData}" style="max-width:200px;border-radius:8px;border:2px solid var(--primary-color);">
-                <p style="font-size:0.85rem;opacity:0.7;">✅ 已拍照</p>
-            `;
+            document.getElementById('captured-preview').innerHTML = `<img src="${capturedPhotoData}" style="max-width:200px;border-radius:8px;border:2px solid var(--primary-color);"><p style="font-size:0.85rem;opacity:0.7;">✅ 已捕捉原图</p>`;
         }
 
         function stopCamera() {
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-                mediaStream = null;
-            }
+            if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
             document.getElementById('camera-feed').style.display = 'none';
         }
 
-        // ========== Invitation ==========
         function generateInvite() {
-            const inviteUrl = `${window.location.origin}${window.location.pathname}?mode=add`;
-            const text = `🌟 邀请你加入星河记忆同学录！\n\n点击链接填写信息：\n${inviteUrl}\n\n✨ 每颗星都是独一无二的你！`;
-
-            // Copy to clipboard
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('✅ 邀请链接已复制到剪贴板！\n\n将以下内容分享给同学：\n\n' + text);
-                }).catch(() => {
-                    fallbackCopy(text);
-                });
-            } else {
-                fallbackCopy(text);
-            }
+            const user = Auth.getUser();
+            if (!user) { alert('请先登录'); return; }
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?mode=add&inviter=${user.username}&school=${encodeURIComponent('星河学院')}`;
+            const text = `🌟 星河记忆：由 ${user.username} 发起的邀请！\n\n链接：${inviteUrl}`;
+            if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => alert('✅ 邀请链接已复制！')); }
+            else { alert('邀请链接：' + inviteUrl); }
         }
 
-        function fallbackCopy(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                alert('✅ 邀请链接已复制！');
-            } catch (e) {
-                alert('请手动复制邀请链接：\n\n' + text);
-            }
-            document.body.removeChild(textarea);
-        }
-
-        // Check for invite mode
-        (function checkInviteMode() {
+        (function init() {
             const params = new URLSearchParams(window.location.search);
             if (params.get('mode') === 'add') {
-                document.querySelector('.editor-section').scrollIntoView({ behavior: 'smooth' });
-                document.getElementById('alumni-name').focus();
+                document.getElementById('alumni-inviter').value = params.get('inviter') || '';
+                document.getElementById('alumni-school').value = params.get('school') || '';
+                setTimeout(() => document.querySelector('.editor-section').scrollIntoView(), 500);
+            }
+            Galaxy.init();
+            loadAlumni();
+            const user = Auth.getUser();
+            if (user) {
+                document.getElementById('login-link').classList.add('hidden');
+                document.getElementById('logout-link').classList.remove('hidden');
+                if (user.role === 'head' || user.role === 'admin') document.getElementById('admin-link').classList.remove('hidden');
             }
         })();
 
-        // ========== Card Preview ==========
         function showCard(person) {
             const overlay = document.getElementById('preview-overlay');
             const content = overlay.querySelector('.overlay-content');
-            let style = '';
-            if (person.bgColor) {
-                style = `background: ${person.bgColor}; color: #fff;`;
-            }
-            if (person.bgImage) {
-                style = `background-image: url(${person.bgImage}); background-size: cover; color: #fff;`;
-            }
-            content.innerHTML = `
-                <div class="polaroid" style="${style}">
-                    <img src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7d5fff&color=fff&size=200'">
-                    <div class="name">${person.name}</div>
-                    <div class="wish">💬 ${person.wish}</div>
-                </div>
-            `;
+            const style = person.style || {};
+            let css = `background: ${style.bgColor || '#fff'}; color: ${style.textColor || '#333'};`;
+            if (style.bgImage) css += `background-image: url(${style.bgImage}); background-size: cover; background-position: center;`;
+            content.innerHTML = `<div class="polaroid" style="${css} max-width: 400px; padding: 20px;"><img src="${person.photo}" style="width:100%; border-radius: 5px;"><h2 style="margin: 15px 0 5px;">${person.name}</h2><p style="opacity: 0.7; font-size: 0.9rem;">${person.school || ''}</p><hr style="opacity: 0.2; margin: 15px 0;"><div style="font-size: 1.1rem; line-height: 1.6; font-style: italic;">${person.wish}</div><div style="margin-top: 20px; font-size: 0.7rem; opacity: 0.5;">邀请人: ${person.inviter || '未知'}</div></div>`;
             overlay.style.display = 'flex';
         }
 
-        document.getElementById('preview-overlay').onclick = function() {
-            this.style.display = 'none';
-        };
-
-        document.getElementById('logout-link').onclick = (e) => {
-            e.preventDefault();
-            Auth.logout();
-            location.reload();
-        };
-
-        // ========== Init ==========
-        Galaxy.init();
-        loadAlumni();
-
-        const user = Auth.getUser();
-        if (user) {
-            document.getElementById('login-link').classList.add('hidden');
-            if (user.role === 'admin' || user.role === 'head') {
-                document.getElementById('admin-link').classList.remove('hidden');
-            }
-        }
+        document.getElementById('preview-overlay').onclick = function() { this.style.display = 'none'; };
+        document.getElementById('logout-link').onclick = (e) => { e.preventDefault(); Auth.logout(); location.href = 'index.html'; };
     </script>
 </body>
 </html>
