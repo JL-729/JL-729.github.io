@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星河博客 - 星河记忆</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/galaxy.js"></script>
+    <style>
+        .blog-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            max-width: 900px;
+            margin: 2rem auto;
+        }
+        .blog-post {
+            padding: 2rem;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            transition: 0.3s;
+        }
+        .blog-post:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 30px rgba(125, 95, 255, 0.1);
+        }
+        .post-title {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            opacity: 0.6;
+            margin-bottom: 1.5rem;
+        }
+        .post-content {
+            line-height: 1.8;
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .post-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .post-images img {
+            width: 100%;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .attachment-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            text-decoration: none;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .attachment-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .comments-list {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .comment-item {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .comment-author {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="galaxy-canvas"></canvas>
+
+    <nav class="glass">
+        <div class="logo">✨ 星河记忆</div>
+        <div class="links">
+            <a href="index.html">首页</a>
+            <a href="alumni.html">同学录</a>
+            <a href="lanterns.html">孔明灯</a>
+            <a href="lanterns.html">孔明灯</a><a href="blog.html">星河博客</a>
+            <a href="cosmos.html">小宇宙</a>
+            <a href="admin.html" id="admin-link" class="hidden">管理后台</a>
+            <a href="login.html" id="login-link">登录</a>
+            <a href="#" id="logout-link" class="hidden">注销</a>
+        </div>
+    </nav>
+
+    <main>
+        <h1 style="text-align: center; margin-top: 1rem;">🌌 星河博客</h1>
+        <p style="text-align: center; opacity: 0.8;">长文、图文、附件，记录我们的点点滴滴</p>
+
+        <!-- Post Form -->
+        <section class="glass" style="max-width: 900px; margin: 2rem auto; padding: 2rem;">
+            <h2>发布新博文</h2>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <input type="text" id="post-title" placeholder="文章标题" class="glass gradient-input" style="padding: 1rem;">
+                <textarea id="post-content" placeholder="正文内容..." class="glass gradient-textarea"></textarea>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display:block; margin-bottom:0.5rem; font-size:0.9rem; opacity:0.8;">添加图片 (多选):</label>
+                        <input type="file" id="post-images" accept="image/*" multiple class="glass">
+                    </div>
+                    <div>
+                        <label style="display:block; margin-bottom:0.5rem; font-size:0.9rem; opacity:0.8;">添加附件:</label>
+                        <input type="file" id="post-attachment" class="glass">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="submitPost()" style="padding: 1rem 2rem; align-self: flex-end;">🚀 发布博文</button>
+                <div id="status-msg" style="text-align: right; font-size: 0.9rem;"></div>
+            </div>
+        </section>
+
+        <!-- Blog Posts -->
+        <div id="blog-posts" class="blog-grid">
+            <p style="text-align:center;opacity:0.6;">正在加载星河中的故事...</p>
+        </div>
+    </main>
+
+    <div id="preview-overlay" class="overlay">
+        <div class="overlay-content"></div>
+    </div>
+
+    <script>
+        async function loadPosts() {
+            const container = document.getElementById('blog-posts');
+            try {
+                const data = await Storage.readJSON('/db/blog.json') || [];
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;opacity:0.6;">✨ 星河尚空，期待你的第一个故事</p>';
+                    return;
+                }
+                container.innerHTML = '';
+                data.slice().reverse().forEach(post => renderPost(post, container));
+            } catch (e) {
+                container.innerHTML = '<p style="text-align:center;opacity:0.6;">加载失败</p>';
+            }
+        }
+
+        function renderPost(post, container) {
+            const div = document.createElement('div');
+            div.className = 'blog-post';
+            
+            let imagesHtml = '';
+            if (post.images && post.images.length > 0) {
+                imagesHtml = `<div class="post-images">${post.images.map(img => `<img src="${img}" onclick="previewMedia('${img}', 'img')">`).join('')}</div>`;
+            }
+            
+            let attachHtml = '';
+            if (post.attachment) {
+                const fileName = post.attachment.split('/').pop();
+                attachHtml = `<a href="${post.attachment}" class="attachment-link" download>📁 附件下载: ${fileName}</a>`;
+            }
+            
+            const commentsHtml = (post.comments || []).map(c => `
+                <div class="comment-item">
+                    <span class="comment-author">${c.author}:</span>
+                    <span>${escapeHtml(c.text)}</span>
+                </div>
+            `).join('');
+
+            div.innerHTML = `
+                <div class="post-title">${escapeHtml(post.title || '无题')}</div>
+                <div class="post-meta">
+                    <span>👤 ${post.author}</span>
+                    <span>📅 ${new Date(post.createdAt).toLocaleString()}</span>
+                    <span>❤️ ${post.likes || 0}</span>
+                </div>
+                <div class="post-content">${escapeHtml(post.content)}</div>
+                ${imagesHtml}
+                ${attachHtml}
+                
+                <div style="margin-top: 1.5rem; display:flex; gap:1.5rem;">
+                    <button class="btn btn-glass" onclick="likePost('${post.id}')" style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--glass-border);">❤️ 点赞</button>
+                    <button class="btn btn-glass" onclick="toggleComments('${post.id}')" style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--glass-border);">💬 评论 (${post.comments?.length || 0})</button>
+                </div>
+
+                <div id="comments-${post.id}" class="comments-list" style="display:none;">
+                    ${commentsHtml}
+                    <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                        <input type="text" id="input-${post.id}" placeholder="写下你的评论..." class="glass" style="flex:1; padding:0.5rem 1rem;">
+                        <button class="btn btn-primary" onclick="addComment('${post.id}')">发送</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        async function submitPost() {
+            const title = document.getElementById('post-title').value.trim();
+            const content = document.getElementById('post-content').value.trim();
+            const imageFiles = document.getElementById('post-images').files;
+            const attachFile = document.getElementById('post-attachment').files[0];
+            const status = document.getElementById('status-msg');
+
+            if (!title || !content) { alert('标题和正文不能为空'); return; }
+            const user = Auth.getUser();
+            if (!user) { alert('请先登录'); return; }
+
+            status.textContent = '⏳ 发布中...';
+            
+            try {
+                const imageUrls = [];
+                for (const file of imageFiles) {
+                    const path = `/media/blog/${Date.now()}_${file.name}`;
+                    await Storage.put(path, file);
+                    imageUrls.push(Storage.getBaseUrl() + path);
+                }
+                
+                let attachUrl = '';
+                if (attachFile) {
+                    const path = `/media/blog/${Date.now()}_${attachFile.name}`;
+                    await Storage.put(path, attachFile);
+                    attachUrl = Storage.getBaseUrl() + path;
+                }
+
+                const posts = await Storage.readJSON('/db/blog.json') || [];
+                posts.push({
+                    id: 'blog_' + Date.now(),
+                    title, content,
+                    author: user.username,
+                    createdAt: Date.now(),
+                    images: imageUrls,
+                    attachment: attachUrl,
+                    likes: 0,
+                    comments: []
+                });
+                
+                await Storage.writeJSON('/db/blog.json', posts);
+                status.textContent = '✅ 发布成功！';
+                setTimeout(() => location.reload(), 1000);
+            } catch (e) {
+                status.textContent = '❌ 发布失败';
+            }
+        }
+
+        async function likePost(id) {
+            try {
+                const posts = await Storage.readJSON('/db/blog.json');
+                const post = posts.find(p => p.id === id);
+                if (post) {
+                    post.likes = (post.likes || 0) + 1;
+                    await Storage.writeJSON('/db/blog.json', posts);
+                    loadPosts();
+                }
+            } catch (e) {}
+        }
+
+        function toggleComments(id) {
+            const el = document.getElementById(`comments-${id}`);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function addComment(postId) {
+            const input = document.getElementById(`input-${postId}`);
+            const text = input.value.trim();
+            if (!text) return;
+            const user = Auth.getUser();
+            if (!user) { alert('请先登录'); return; }
+
+            try {
+                const posts = await Storage.readJSON('/db/blog.json');
+                const post = posts.find(p => p.id === postId);
+                if (post) {
+                    if (!post.comments) post.comments = [];
+                    post.comments.push({ author: user.username, text, createdAt: Date.now() });
+                    await Storage.writeJSON('/db/blog.json', posts);
+                    loadPosts();
+                }
+            } catch (e) {}
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function previewMedia(url, type) {
+            const overlay = document.getElementById('preview-overlay');
+            const content = overlay.querySelector('.overlay-content');
+            content.innerHTML = `<img src="${url}" style="max-width:100%;max-height:100%;border-radius:10px;">`;
+            overlay.style.display = 'flex';
+        }
+
+        document.getElementById('preview-overlay').onclick = function() { this.style.display = 'none'; };
+        document.getElementById('logout-link').onclick = (e) => { e.preventDefault(); Auth.logout(); location.href = 'index.html'; };
+
+        Galaxy.init();
+        loadPosts();
+
+        const user = Auth.getUser();
+        if (user) {
+            document.getElementById('login-link').classList.add('hidden');
+            document.getElementById('logout-link').classList.remove('hidden');
+            if (user.role === 'head' || user.role === 'admin') document.getElementById('admin-link').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -83,8 +83,17 @@ const Storage = (() => {
         },
 
         async put(path, data, contentType = 'application/json') {
-            const body = typeof data === 'string' ? data : JSON.stringify(data);
-            return request('PUT', path, body, contentType);
+            let body;
+            let type = contentType;
+
+            if (data instanceof File || data instanceof Blob) {
+                body = data;
+                type = data.type || contentType;
+            } else {
+                body = typeof data === 'string' ? data : JSON.stringify(data);
+            }
+            
+            return request('PUT', path, body, type);
         },
 
         async delete(path) {
